@@ -1,0 +1,18 @@
+#!/bin/sh
+
+kernel="workdir/build/sqlite_qemu-x86_64"
+
+if test ! -f "workdir/build/sqlite_qemu-x86_64"; then
+    echo "No kernel file workdir/build/sqlite_qemu-x86_64." 1>&2
+    echo "Did you run ./scripts/build/qemu.x86_64 ?" 1>&2
+    exit 1
+fi
+
+rm -f rootfs.cpio
+
+./workdir/unikraft/support/scripts/mkcpio rootfs.cpio ./rootfs/
+
+qemu-system-x86_64 \
+	-kernel $kernel \
+	-nographic \
+	-initrd rootfs.cpio
