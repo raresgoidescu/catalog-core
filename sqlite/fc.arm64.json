@@ -1,7 +1,7 @@
 {
   "boot-source": {
     "kernel_image_path": "workdir/build/sqlite_fc-arm64",
-    "boot_args": "sqlite_fc-arm64 vfs.fstab=[ \"initrd0:/:extract::ramfs=1:\" ] -- sqlite3 -interactive",
+    "boot_args": "sqlite_fc-arm64 vfs.fstab=[ \"initrd0:/:extract::ramfs=1:\" ] -- /chinook.db 'SELECT * FROM Album LIMIT 10'",
     "initrd_path": "initrd.cpio"
   },
   "drives": [],
