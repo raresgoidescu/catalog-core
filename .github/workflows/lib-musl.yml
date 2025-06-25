@@ -84,24 +84,15 @@ jobs:
           echo "$apps"
 
           touch output.log
-          overall_result="passed"
 
           for app in $apps; do
-            echo "[$app]" | tee -a output.log
-            echo "" | tee -a output.log
-
+            echo "[$app]"
+            echo ""
             cd "$app"
-            if ./scripts/test/all.sh 2>&1 | tee -a ../output.log; then
-              echo "$app: passed" | tee -a ../output.log
-            else
-              echo "$app: FAILED" | tee -a ../output.log
-              overall_result="failed"
-            fi
+            ./scripts/test/all.sh
             cd ..
-            echo "" | tee -a output.log
+            echo ""
           done
-
-          echo "result=$overall_result" >> $GITHUB_OUTPUT
 
       - name: Generate test report
         if: always()
