@@ -85,6 +85,7 @@ jobs:
 
           touch output.log
 
+          (
           for app in $apps; do
             echo "[$app]"
             echo ""
@@ -93,6 +94,7 @@ jobs:
             cd ..
             echo ""
           done
+          ) >> output.log
 
       - name: Generate test report
         if: always()
@@ -121,7 +123,6 @@ jobs:
 
           echo "### Trigger Info" >> $GITHUB_STEP_SUMMARY
           echo "- Source PR: https://github.com/${{ github.event.client_payload.pr_repo }}/pull/${{ github.event.client_payload.pr_number }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Workflow ID: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
 
           echo "### System Configuration" >> $GITHUB_STEP_SUMMARY
           echo "- QEMU Version: $(qemu-system-x86_64 --version | head -n1)" >> $GITHUB_STEP_SUMMARY
