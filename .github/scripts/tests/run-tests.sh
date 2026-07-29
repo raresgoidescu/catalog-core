@@ -44,7 +44,7 @@ for app in $apps; do
   echo "[$app]" | tee -a output.log
   echo "" | tee -a output.log
   cd "$app"
-  sudo -E ./scripts/test/all.sh 2>&1 | tee -a ../output.log
+  sudo -E ./.scripts/test/all.sh 2>&1 | tee -a ../output.log
   cd ..
   echo ""
 done
