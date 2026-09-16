@@ -287,7 +287,8 @@ jobs:
           DISCORD_THREAD_ID: ${{ vars.DISCORD_THREAD_ID }}
           DISCORD_MENTION: ${{ vars.DISCORD_MENTION }}
         run: |
-          summary=$(tail -n +2 results.csv | awk -F, '{print $6}' | sort | uniq -c || true)
+          summary=$(python3 .github/scripts/tests/render-summary.py \
+            --csv results.csv --discord-summary)
           bash .github/scripts/notify/discord-notify.sh "${{ steps.aggregate.outputs.result }}" \
             "${{ inputs.display_name }} (branch=${{ inputs.branch }}, mode=${{ inputs.mode }}) finished.
           \`\`\`

@@ -45,6 +45,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", required=True)
     ap.add_argument("--tool-versions", default=None)
+    ap.add_argument("--discord-summary", action="store_true")
     args = ap.parse_args()
 
     rows = []
@@ -53,6 +54,16 @@ def main():
             rows = list(csv.DictReader(f))
     except FileNotFoundError:
         pass
+
+    summaries = summarize(rows)
+    passed = sum(1 for row in summaries if all(
+        row[phase] in ("PASSED", "N/A") for phase in ("setup", "build", "run")
+    ))
+    failed = len(summaries) - passed
+    if args.discord_summary:
+        print(f"{failed:3d} FAILED")
+        print(f"{passed:3d} PASSED")
+        return
 
     out = sys.stdout
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
@@ -67,14 +78,11 @@ def main():
         if not rows:
             print("\n_No structured results were found -- every matrix leg may have failed before producing output. Check the raw per-app logs in the archived artifact._\n", file=out)
         else:
-            summaries = summarize(rows)
-            passed = sum(1 for r in summaries if all(r[p] in ("PASSED", "N/A") for p in ("setup", "build", "run")))
-            failed = len(summaries) - passed
             print(f"\n**{passed} passed, {failed} failed** out of {len(summaries)} (arch, platform, app, compiler) configurations.\n", file=out)
 
             print("| Arch | Platform | App | Compiler | Setup | Build | Run |", file=out)
             print("|------|----------|-----|----------|-------|-------|-----|", file=out)
-            for row in sorted(summaries, key=lambda r: (r["arch"], r["platform"], r["app"], r["compiler"])):
+            for row in sorted(summaries, key=lambda r: (r["app"], r["compiler"], r["platform"], r["arch"])):
                 statuses = [STATUS_ICON.get(row[p], row[p]) for p in ("setup", "build", "run")]
                 print(f"| {row['arch']} | {row['platform']} | {row['app']} | {row['compiler']} | {' | '.join(statuses)} |", file=out)
 
