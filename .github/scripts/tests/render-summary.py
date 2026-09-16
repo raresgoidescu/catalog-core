@@ -13,9 +13,32 @@ import argparse
 import csv
 import os
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 
-STATUS_ICON = {"PASSED": "✅ PASSED", "FAILED": "❌ FAILED"}
+STATUS_ICON = {"PASSED": "✅", "FAILED": "❌", "N/A": "N/A"}
+
+
+def summarize(rows):
+    grouped = defaultdict(dict)
+    for row in rows:
+        if row["platform"] == "n/a" and row["arch"] == "n/a":
+            continue
+        key = (row["arch"], row["platform"], row["app"], row["compiler"])
+        grouped[key][row["phase"]] = row["status"]
+
+    summary = []
+    for (arch, platform, app, compiler), phases in grouped.items():
+        build = phases.get("build", "N/A")
+        summary.append({
+            "arch": arch,
+            "platform": platform,
+            "app": app,
+            "compiler": compiler,
+            "setup": "PASSED",
+            "build": build,
+            "run": phases.get("run", "N/A") if build == "PASSED" else "N/A",
+        })
+    return summary
 
 
 def main():
@@ -44,42 +67,46 @@ def main():
         if not rows:
             print("\n_No structured results were found -- every matrix leg may have failed before producing output. Check the raw per-app logs in the archived artifact._\n", file=out)
         else:
-            passed = sum(1 for r in rows if r["status"] == "PASSED")
-            failed = sum(1 for r in rows if r["status"] == "FAILED")
-            print(f"\n**{passed} passed, {failed} failed** out of {len(rows)} (app, compiler, platform, arch, phase) combinations.\n", file=out)
+            summaries = summarize(rows)
+            passed = sum(1 for r in summaries if all(r[p] in ("PASSED", "N/A") for p in ("setup", "build", "run")))
+            failed = len(summaries) - passed
+            print(f"\n**{passed} passed, {failed} failed** out of {len(summaries)} (arch, platform, app, compiler) configurations.\n", file=out)
 
-            print("| App | Compiler | Platform | Arch | Phase | Status |", file=out)
-            print("|-----|----------|----------|------|-------|--------|", file=out)
-            phase_order = {"build": 0, "run": 1}
-            for r in sorted(rows, key=lambda r: (
-                r["app"], r["compiler"], r["platform"], r["arch"],
-                phase_order.get(r["phase"], 99),
-            )):
-                status = STATUS_ICON.get(r["status"], r["status"])
-                print(f"| {r['app']} | {r['compiler']} | {r['platform']} | {r['arch']} | {r['phase']} | {status} |", file=out)
+            print("| Arch | Platform | App | Compiler | Setup | Build | Run |", file=out)
+            print("|------|----------|-----|----------|-------|-------|-----|", file=out)
+            for row in sorted(summaries, key=lambda r: (r["arch"], r["platform"], r["app"], r["compiler"])):
+                statuses = [STATUS_ICON.get(row[p], row[p]) for p in ("setup", "build", "run")]
+                print(f"| {row['arch']} | {row['platform']} | {row['app']} | {row['compiler']} | {' | '.join(statuses)} |", file=out)
 
             if failed:
                 print("\n### Failure statistics", file=out)
-                print("| Compiler | Platform | Arch | Phase | Failures |", file=out)
-                print("|----------|----------|------|-------|----------|", file=out)
-                failures = Counter(
-                    (r["compiler"], r["platform"], r["arch"], r["phase"])
-                    for r in rows
-                    if r["status"] == "FAILED"
-                )
-                for (compiler, platform, arch, phase), count in sorted(failures.items()):
-                    print(f"| {compiler} | {platform} | {arch} | {phase} | {count} |", file=out)
+                first_failures = []
+                for row in summaries:
+                    stage = next((phase for phase in ("setup", "build", "run") if row[phase] == "FAILED"), None)
+                    if stage:
+                        first_failures.append((stage, row))
 
-                missing_scripts = sorted({
-                    r["app"] for r in rows
-                    if r["status"] == "FAILED"
-                    and r["phase"] == "setup"
-                    and r["platform"] == "n/a"
-                })
-                if missing_scripts:
-                    print("\n### Apps without test scripts", file=out)
-                    for app in missing_scripts:
-                        print(f"- `{app}`: missing `.scripts/test/all.sh`", file=out)
+                print("| First failing stage | Dimension | Value | Configurations |", file=out)
+                print("|--------------------|-----------|-------|---------------|", file=out)
+                for stage in ("setup", "build", "run"):
+                    stage_rows = [row for failure_stage, row in first_failures if failure_stage == stage]
+                    for dimension in ("compiler", "platform", "arch", "app"):
+                        counts = Counter(row[dimension] for row in stage_rows)
+                        for value, count in sorted(counts.items()):
+                            print(f"| {stage} | {dimension} | {value} | {count} |", file=out)
+
+        print("\n### Apps without test scripts", file=out)
+        missing_scripts = sorted({
+            r["app"] for r in rows
+            if r["status"] == "FAILED"
+            and r["phase"] == "setup"
+            and r["platform"] == "n/a"
+        })
+        if missing_scripts:
+            for app in missing_scripts:
+                print(f"- `{app}`: missing `.scripts/test/all.sh`", file=out)
+        else:
+            print("- None", file=out)
 
         print("\n### System Configuration", file=out)
         if args.tool_versions and os.path.exists(args.tool_versions):
