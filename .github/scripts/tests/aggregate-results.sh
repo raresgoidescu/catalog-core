@@ -28,11 +28,7 @@ if [ ! -s output.log ] && [ "$(wc -l < results.csv)" -le 1 ]; then
   exit 0
 fi
 
-if grep -q ',FAILED$' results.csv; then
-  RESULT='failure'
-else
-  RESULT='success'
-fi
+RESULT=$(python3 .github/scripts/tests/render-summary.py --csv results.csv --result)
 
 echo "result=$RESULT" >> "$GITHUB_OUTPUT"
 echo "result_upper=$(echo "$RESULT" | tr 'a-z' 'A-Z')" >> "$GITHUB_OUTPUT"

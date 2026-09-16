@@ -46,6 +46,7 @@ def main():
     ap.add_argument("--csv", required=True)
     ap.add_argument("--tool-versions", default=None)
     ap.add_argument("--discord-summary", action="store_true")
+    ap.add_argument("--result", action="store_true")
     args = ap.parse_args()
 
     rows = []
@@ -60,6 +61,9 @@ def main():
         row[phase] in ("PASSED", "N/A") for phase in ("setup", "build", "run")
     ))
     failed = len(summaries) - passed
+    if args.result:
+        print("failure" if not summaries or failed else "success")
+        return
     if args.discord_summary:
         print(f"{failed:3d} FAILED")
         print(f"{passed:3d} PASSED")
