@@ -125,6 +125,16 @@ jobs:
             "refs/pull/${ROOT_PR}/head"
           git -C "$DEP_REPO_PATH" checkout --detach FETCH_HEAD
 
+      - name: Resolve PR and dependencies
+        if: github.event_name == 'repository_dispatch'
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          ROOT_REPO: ${{ github.event.client_payload.pr_repo }}
+          ROOT_PR: ${{ github.event.client_payload.pr_number }}
+        run: |
+          python3 .github/scripts/utils/resolve-depends-on.py \
+            "$ROOT_REPO" "$ROOT_PR" setup.sh
+
       - name: Archive repositories
         run: tar -czf repos.tar.gz repos
 
