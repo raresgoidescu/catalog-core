@@ -34,7 +34,7 @@ def summarize(rows):
             "platform": platform,
             "app": app,
             "compiler": compiler,
-            "setup": "PASSED",
+            "setup": phases.get("setup", "PASSED"),
             "build": build,
             "run": phases.get("run", "N/A") if build == "PASSED" else "FAILED",
         })

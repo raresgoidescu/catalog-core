@@ -12,17 +12,20 @@ if [ -z "$APP" ]; then
 fi
 
 if [ -n "$COMPILER" ]; then
-  export CC="$COMPILER"
-  if [ -z "$CXX" ]; then
-    case "$COMPILER" in
-      *clang*) export CXX="${COMPILER/clang/clang++}" ;;
-      *gcc*)   export CXX="${COMPILER/gcc/g++}" ;;
-      cc)      export CXX="c++" ;;
-      *)
-        echo "::warning::Unrecognized compiler '$COMPILER' - no matching CXX could be derived, leaving CXX unset. This app may silently mix toolchains." >&2
-        ;;
-    esac
-  fi
+  case "$COMPILER" in
+    clang*)
+      export CC="$COMPILER"
+      [ -n "${CXX:-}" ] || export CXX="${COMPILER/clang/clang++}"
+      ;;
+    gcc)
+      # Leave CC unset so Unikraft's defconfig selects the target compiler.
+      unset CC CXX
+      ;;
+    *)
+      echo "::error::Unsupported compiler '$COMPILER'; expected gcc or clang." >&2
+      exit 2
+      ;;
+  esac
 fi
 
 ./setup.sh "$BRANCH"
@@ -39,7 +42,7 @@ if [ ! -x "$APP/.scripts/test/all.sh" ]; then
   echo "No executable .scripts/test/all.sh found for $APP" | tee "$LOG_FILE"
   printf 'app,compiler,platform,arch,phase,status\n%s,%s,n/a,n/a,setup,FAILED\n' \
     "$APP" "${COMPILER:-default}" > "results-${LOG_SUFFIX}.csv"
-  exit 0
+  exit 1
 fi
 
 # Header + test run go through the same `tee` pipe into the same file.
@@ -70,3 +73,7 @@ python3 "$(dirname "$0")/parse-test-log.py" \
   --compiler "${COMPILER:-default}" \
   --log "$LOG_FILE" \
   --out "results-${LOG_SUFFIX}.csv"
+
+if grep -q ',FAILED$' "results-${LOG_SUFFIX}.csv"; then
+  exit 1
+fi
