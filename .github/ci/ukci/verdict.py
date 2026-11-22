@@ -1,15 +1,18 @@
 """Turn raw attempts into verdicts: did *this change* make things worse?
 
-Per app / compiler / variant:
+A configuration is one app + compiler + variant (e.g. nginx, gcc, qemu.x86_64).
+For each one that failed, the runner retried a failed *run* once and ran it
+again without the PRs (base). From that:
 
-  PASS            passed first time
-  FLAKY           failed, passed on retry (same code)         non-blocking
-  BROKEN_ON_BASE  fails with and without the PRs              non-blocking
-  REGRESSION      fails with the PRs, passes without them     BLOCKING
-  FAIL            fails, and there is no base to compare to   BLOCKING
-                  (scheduled runs, or the PRs don't touch it)
-  INFRA           CI itself failed (checkout, runner, ...)    BLOCKING,
-                  but says so: re-run, don't fix your PR
+  PASS            passed
+  FLAKY           failed, then passed on retry with the same code    shown, not blocking
+  BROKEN_ON_BASE  fails the same way without the PRs                 shown, not blocking
+                  (same phase, same first error)
+  REGRESSION      passes without the PRs, or fails differently       BLOCKING
+  FAIL            fails, and there is nothing to compare it to        BLOCKING
+                  (scheduled runs: nothing is "the PR")
+  INFRA           CI could not tell: a download failed, the job died, BLOCKING (re-run;
+                  the base re-run is missing                          not your fault)
 """
 
 from __future__ import annotations
@@ -28,25 +31,17 @@ class Verdict:
     compiler: str
     variant: str
     verdict: str
-    phase: str | None          # "build" | "run" | None
-    detail: str
+    reason: str                         # what failed, for people ("" when passed)
+    detail: str = ""                    # why this verdict
     inherited_from: str | None = None   # dependency PR whose own run fails the same way
 
 
-def _failed_phase(a: dict) -> str | None:
-    if a["build"] != "PASS":
-        return "build"
-    if a["run"] is not None and a["run"] != "PASS":
-        return "run"
-    return None
+def _ok(a: dict) -> bool:
+    return a["build"] == "PASS" and (a["run"] is None or a["run"] == "PASS")
 
 
-def _describe(a: dict) -> str:
-    phase = _failed_phase(a)
-    if phase is None:
-        return "passed"
-    status = a[phase]
-    return {"TIMEOUT": f"{phase} timed out", "MISSING": f"{phase} produced no result"}.get(status, f"{phase} failed")
+def _phase(a: dict) -> str:
+    return "build" if a["build"] != "PASS" else "run"
 
 
 def base_label(plan: dict) -> str:
@@ -56,39 +51,53 @@ def base_label(plan: dict) -> str:
     return label
 
 
+def has_base(plan: dict, cell: dict) -> bool:
+    """Is there anything 'without the PRs' to compare this cell to?"""
+    if plan.get("catalog_base"):
+        return True
+    return any(plan["base_lock"].get(p, {}).get("sha") != plan["lock"].get(p, {}).get("sha")
+               for p in cell.get("repos", []))
+
+
+def judge_one(first: dict | None, retry: dict | None, base: dict | None, *,
+              comparable: bool, where: str, infra_error: str | None) -> tuple[str, str, str]:
+    """(verdict, reason, detail) for one configuration."""
+    if first is None:
+        return INFRA, infra_error or "did not run", "re-run the workflow"
+    if _ok(first):
+        return PASS, "", ""
+    reason = first.get("reason") or f"{_phase(first)} failed"
+    if first.get("fetch_error"):
+        return INFRA, reason, "a download failed during the build; re-run the workflow"
+    if retry and _ok(retry):
+        return FLAKY, reason, "passed on retry with the same code"
+    if not comparable:
+        return FAIL, reason, ""
+    if base is None:
+        return INFRA, reason, infra_error or "the comparison run without the PRs is missing; re-run the workflow"
+    if _ok(base):
+        return REGRESSION, reason, f"passes on {where} without the PRs"
+    if base.get("fetch_error"):
+        return INFRA, reason, "a download failed in the comparison run; re-run the workflow"
+    if base.get("signature") and base.get("signature") == first.get("signature"):
+        return BROKEN_ON_BASE, reason, f"fails the same way on {where} without the PRs"
+    return REGRESSION, reason, f"fails differently on {where} without the PRs: {base.get('reason') or _phase(base) + ' failed'}"
+
+
 def judge(plan: dict, results: list[dict]) -> list[Verdict]:
     where = base_label(plan)
     by_cell = {(r["app"], r["compiler"]): r for r in results}
     out: list[Verdict] = []
     for cell in plan["cells"]:
         app, cc = cell["app"], cell["compiler"]
-        r = by_cell.get((app, cc))
-        if r is None or (r.get("infra_error") and not r.get("attempts")):
-            why = (r or {}).get("infra_error") or "the job produced no results (see the run for the failing step)"
-            out += [Verdict(app, cc, v, INFRA, None, why) for v in cell["variants"]]
-            continue
-        attempts: dict[tuple[str, str], dict] = {(a["variant"], a["attempt"]): a for a in r["attempts"]}
+        r = by_cell.get((app, cc)) or {}
+        attempts = {(a["variant"], a["attempt"]): a for a in r.get("attempts", [])}
+        infra = r.get("infra_error") or (None if r else "the job produced no results (see the failing step in the run)")
         for v in cell["variants"]:
-            first = attempts.get((v, "first"))
-            if first is None:
-                out.append(Verdict(app, cc, v, INFRA, None, r.get("infra_error") or "variant did not run"))
-                continue
-            phase = _failed_phase(first)
-            if phase is None:
-                out.append(Verdict(app, cc, v, PASS, None, "passed"))
-                continue
-            retry, base = attempts.get((v, "retry")), attempts.get((v, "base"))
-            if retry and _failed_phase(retry) is None:
-                out.append(Verdict(app, cc, v, FLAKY, phase, f"{_describe(first)}, passed on retry"))
-            elif base:
-                if _failed_phase(base) is None:
-                    out.append(Verdict(app, cc, v, REGRESSION, phase,
-                                       f"{_describe(first)} with the PRs; passes on {where} without them"))
-                else:
-                    out.append(Verdict(app, cc, v, BROKEN_ON_BASE, phase,
-                                       f"{_describe(first)}; also fails on {where} without the PRs"))
-            else:
-                out.append(Verdict(app, cc, v, FAIL, phase, _describe(first)))
+            verdict, reason, detail = judge_one(
+                attempts.get((v, "first")), attempts.get((v, "retry")), attempts.get((v, "base")),
+                comparable=has_base(plan, cell), where=where, infra_error=infra)
+            out.append(Verdict(app, cc, v, verdict, reason, detail))
     return out
 
 

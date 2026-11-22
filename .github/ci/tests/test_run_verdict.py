@@ -89,45 +89,61 @@ class RunVariantTest(TempCatalog):
         self.assertEqual((r["build"], r["run"]), ("PASS", "TIMEOUT"))
 
 
-def attempt(variant, kind, build="PASS", run_="PASS"):
-    return {"variant": variant, "attempt": kind, "build": build, "run": run_}
+def attempt(variant, kind, build="PASS", run_="PASS", sig=None, fetch=False):
+    a = {"variant": variant, "attempt": kind, "build": build, "run": run_}
+    if build != "PASS" or (run_ not in (None, "PASS")):
+        a.update(reason=f"error {sig}", signature=sig, fetch_error=fetch)
+    return a
 
 
 class VerdictTest(unittest.TestCase):
-    plan = {"channel": "staging", "plan_hash": "h", "errors": [],
-            "cells": [{"app": "nginx", "compiler": "gcc", "why": "links libs/musl", "repos": [],
-                       "variants": ["qemu.x86_64", "fc.x86_64", "xen.x86_64", "qemu.arm64", "fc.arm64"]}]}
+    def plan(self, comparable=True):
+        return {"channel": "staging", "plan_hash": "h", "errors": [], "root": "o/lib-musl#1",
+                "lock": {"libs/musl": {"sha": "pr", "repo": "o/lib-musl", "from": "o/lib-musl#1 merged into staging", "pr": "o/lib-musl#1"}},
+                "base_lock": {"libs/musl": {"sha": "pr" if not comparable else "base", "repo": "o/lib-musl", "from": "staging"}},
+                "cells": [{"app": "nginx", "compiler": "gcc", "why": "links libs/musl", "repos": ["libs/musl"],
+                           "variants": ["a", "b", "c", "d", "e", "f", "g"]}]}
 
-    def judge(self, attempts, **extra):
+    def judge(self, attempts, comparable=True, **extra):
         r = {"app": "nginx", "compiler": "gcc", "attempts": attempts, **extra}
-        return {v.variant: v.verdict for v in V.judge(self.plan, [r])}
+        return {v.variant: v.verdict for v in V.judge(self.plan(comparable), [r])}
 
-    def test_all_verdicts(self):
+    def test_verdicts(self):
         got = self.judge([
-            attempt("qemu.x86_64", "first"),
-            attempt("fc.x86_64", "first", run_="FAIL"), attempt("fc.x86_64", "retry"),
-            attempt("xen.x86_64", "first", build="FAIL", run_=None), attempt("xen.x86_64", "base", build="FAIL", run_=None),
-            attempt("qemu.arm64", "first", run_="FAIL"), attempt("qemu.arm64", "retry", run_="FAIL"),
-            attempt("qemu.arm64", "base"),
-            attempt("fc.arm64", "first", build="FAIL", run_=None),
+            attempt("a", "first"),
+            attempt("b", "first", run_="FAIL", sig="x"), attempt("b", "retry"),                       # flaky
+            attempt("c", "first", build="FAIL", run_="BLOCKED", sig="e1"),
+            attempt("c", "base", build="FAIL", run_="BLOCKED", sig="e1"),                             # same failure
+            attempt("d", "first", build="FAIL", run_="BLOCKED", sig="new"),
+            attempt("d", "base", build="FAIL", run_="BLOCKED", sig="old"),                            # fails differently
+            attempt("e", "first", run_="FAIL", sig="x"), attempt("e", "retry", run_="FAIL", sig="x"),
+            attempt("e", "base"),                                                                     # passes on base
+            attempt("f", "first", build="FAIL", run_="BLOCKED", sig="net", fetch=True),               # download failed
+            attempt("g", "first", build="FAIL", run_="BLOCKED", sig="y"),                             # base missing
         ])
-        self.assertEqual(got, {"qemu.x86_64": V.PASS, "fc.x86_64": V.FLAKY, "xen.x86_64": V.BROKEN_ON_BASE,
-                               "qemu.arm64": V.REGRESSION, "fc.arm64": V.FAIL})
+        self.assertEqual(got, {"a": V.PASS, "b": V.FLAKY, "c": V.BROKEN_ON_BASE, "d": V.REGRESSION,
+                               "e": V.REGRESSION, "f": V.INFRA, "g": V.INFRA})
+
+    def test_nothing_to_compare_is_a_failure(self):
+        got = self.judge([attempt("a", "first", build="FAIL", run_="BLOCKED", sig="z")], comparable=False)
+        self.assertEqual(got["a"], V.FAIL)
 
     def test_missing_job_is_infra(self):
-        got = {v.verdict for v in V.judge(self.plan, [])}
-        self.assertEqual(got, {V.INFRA})
+        self.assertEqual({v.verdict for v in V.judge(self.plan(), [])}, {V.INFRA})
 
-    def test_conclusion_and_render(self):
-        vs = V.judge(self.plan, [{"app": "nginx", "compiler": "gcc", "attempts": [
-            attempt("qemu.x86_64", "first", run_="FAIL"), attempt("qemu.x86_64", "retry", run_="FAIL"),
-            attempt("qemu.x86_64", "base")]}])
-        self.assertEqual(V.conclusion(self.plan, vs), "failure")
-        self.assertTrue(title(self.plan, vs).startswith("❌ 1 regression"))
-        self.assertIn("| ❌ regression | nginx | gcc | qemu.x86_64 | run failed with the PRs; passes on staging without them |",
-                      render(self.plan, vs))
-        only_broken = [v for v in vs if v.variant != "qemu.x86_64"]
-        self.assertEqual({v.verdict for v in only_broken}, {V.INFRA})
+    def test_title_and_grouped_render(self):
+        attempts = [attempt(v, "first", build="FAIL", run_="BLOCKED", sig="boom") for v in "ab"]
+        attempts += [attempt(v, "base") for v in "ab"]
+        plan = self.plan()
+        plan["cells"][0]["variants"] = ["a", "b", "c"]
+        attempts.append(attempt("c", "first"))
+        vs = V.judge(plan, [{"app": "nginx", "compiler": "gcc", "attempts": attempts}])
+        self.assertEqual(V.conclusion(plan, vs), "failure")
+        self.assertEqual(title(plan, vs), "❌ 2 regressions · 1/3 passed")
+        text = render(plan, vs)
+        self.assertIn("**❌ Regression** in 2 configurations: nginx × gcc × a, b", text)   # one block, not two rows
+        self.assertIn("```\nerror boom\n```", text)                                       # the actual error
+        self.assertIn("passes on staging without the PRs", text)
 
 
 if __name__ == "__main__":

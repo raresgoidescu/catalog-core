@@ -117,6 +117,40 @@ def cleanup_instances(sudo: bool) -> None:
         subprocess.run([*pre, "pkill", "-9", name], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+COMPILER_ERROR_RE = re.compile(r"(?:^|\s)(\S+?):\d+(?::\d+)?: (?:fatal )?error: (.+)$")
+OTHER_ERROR_RE = re.compile(r"command not found|No rule to make target|Require \S+ version|unknown C compiler|\*\*\* ")
+RUN_REASON_RE = re.compile(r"^(Cannot .+|Wrong message.*|Wrong .+ from .+|No kernel file.*|.*[Tt]imed? ?out.*)$")
+# Libraries download their sources while building; a failed download is not the PR's fault.
+FETCH_RE = re.compile(r"(?:wget|curl)(?:: |\[\d+\]: )|Could not resolve host|Unable to (?:fetch|download)|"
+                      r"Connection (?:timed out|refused|reset)|ERROR 50[0-9]|ERROR 429|Temporary failure in name resolution", re.I)
+
+
+def failure_reason(log_path: str, phase: str, root: str) -> tuple[str, str, bool]:
+    """(reason for people, signature for comparing, looks like a download failure)."""
+    try:
+        with open(log_path, errors="replace") as f:
+            lines = [line.rstrip() for line in f]
+    except OSError:
+        return f"{phase} produced no log", f"{phase}:no-log", False
+    prefix = root.rstrip("/") + "/"
+    clean = [line.replace(prefix, "").replace("//", "/") for line in lines if line.strip()]
+    reason = None
+    if phase == "build":
+        for line in clean:
+            if m := COMPILER_ERROR_RE.search(line):
+                path = re.sub(r"^.*?/workdir/build/[^/]+/origin/", "", m.group(1))   # unpacked library sources
+                path = re.sub(r"^repos/", "", path)
+                reason = f"{path}: {m.group(2).strip()}"
+                break
+        reason = reason or next((line for line in clean if OTHER_ERROR_RE.search(line)), None)
+    else:
+        reason = next((line for line in clean if RUN_REASON_RE.match(line)), None)
+    reason = (reason or (clean[-1] if clean else f"{phase} failed with no output"))[:300]
+    fetch = any(FETCH_RE.search(line) for line in clean[-40:])
+    signature = f"{phase}:" + re.sub(r":\d+(?::\d+)?\b|0x[0-9a-f]+|\d{3,}", "", reason)
+    return reason, signature, fetch
+
+
 def failed(r: dict) -> bool:
     return r["build"] != PASS or (r["run"] is not None and r["run"] != PASS)
 
@@ -184,6 +218,13 @@ def main(args) -> int:
             r = run_variant(in_dir, v, args.compiler, timeout_s, sudo)
             print("::endgroup::", flush=True)
             r["attempt"] = kind
+            if failed(r):
+                phase = "build" if r["build"] != PASS else "run"
+                if r[phase] == TIMEOUT:
+                    r["reason"], r["signature"], r["fetch_error"] = f"{phase} timed out", f"{phase}:timeout", False
+                else:
+                    r["reason"], r["signature"], r["fetch_error"] = failure_reason(
+                        os.path.join(in_dir, ".scripts/test/log", f"{phase}.{v.name}"), phase, root)
             save_logs(in_dir, out, kind, v.name)
             result["attempts"].append(r)
             write()

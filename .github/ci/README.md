@@ -33,19 +33,23 @@ each other (A ↔ B) are fine.
 - Each PR is tested as GitHub's merge of it into its target branch. If it
   conflicts, rebase.
 
-**Reading the result.**
+**Reading the result.** A *configuration* is one app + compiler + variant
+(for example nginx, gcc, `qemu.x86_64`). The check shows one block per
+distinct failure, with the first error line, and the configurations it hits.
 
 | | verdict | meaning | blocks? |
 |---|---|---|---|
-| ❌ | regression | fails with your PRs, passes without them | yes |
-| ❌ | failure | fails, nothing to compare to (scheduled runs) | yes |
-| ⚠️ | CI infrastructure error | CI broke (download, runner, …); re-run | yes |
-| 🟡 | flaky | failed, then passed on retry with the same code | no |
-| ⚪ | already broken on base | fails the same way without your PRs | no |
+| ❌ | regression | passes without your PRs, or fails *differently* without them | yes |
+| ❌ | failure | fails, and there is nothing to compare it to (scheduled runs) | yes |
+| ⚠️ | CI error | CI couldn't tell: a download failed, a job died, the comparison run is missing. Re-run; it's not your fault | yes |
+| 🟡 | flaky | the run failed, then passed on retry with the same code | no |
+| ⚪ | already broken | fails the same way without your PRs (same phase, same first error) | no |
 | ✅ | passed | | |
 
-Builds are never retried, since they're deterministic. A failed run is retried once.
-Anything that fails is run again on the base branch without your PRs.
+Every failure is run once more without your PRs. A failed *run* is also
+retried once on the same code. A failed *build* isn't retried, since builds are
+deterministic, except that download failures count as CI errors. A run
+replaced by a newer push is marked cancelled and isn't counted.
 
 **Reproducing locally.**
 

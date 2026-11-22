@@ -7,7 +7,7 @@ from ukci import data, report, verdict as V
 
 
 def v(app, variant, verdict, cc="gcc"):
-    return V.Verdict(app, cc, variant, verdict, None, "detail")
+    return V.Verdict(app, cc, variant, verdict, "reason", "detail")
 
 
 class StoreTest(unittest.TestCase):
@@ -60,17 +60,17 @@ class BlameTest(unittest.TestCase):
 
     def test_inherited(self):
         own = {"run_url": "r12", "verdicts": [{"app": "nginx", "compiler": "gcc", "variant": "qemu.x86_64", "verdict": "REGRESSION"}]}
-        self.assertIn("**inherited**: also fails in the own run of [o/lib-musl#12](r12)", self.detail_with(own))
+        self.assertIn("**Inherited**: it also fails in the own run of [o/lib-musl#12](r12)", self.detail_with(own))
         vs = [v("nginx", "qemu.x86_64", V.REGRESSION)]
         report.blame(self.plan, vs, self.FakeStore(own))
-        self.assertEqual(report.title({"cells": [1]}, vs), "❌ 1 regression (inherited from o/lib-musl#12) · 0 passed")
+        self.assertEqual(report.title({"cells": [1]}, vs), "❌ 1 regression (inherited from o/lib-musl#12) · 0/1 passed")
 
     def test_caused_here(self):
         own = {"run_url": "r12", "verdicts": [{"app": "nginx", "compiler": "gcc", "variant": "qemu.x86_64", "verdict": "PASS"}]}
         self.assertIn("comes from this PR", self.detail_with(own))
 
     def test_unknown(self):
-        self.assertIn("not known yet", self.detail_with(None))
+        self.assertIn("Not known yet", self.detail_with(None))
 
 
 class MemberChecksTest(unittest.TestCase):

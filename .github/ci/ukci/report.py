@@ -19,8 +19,9 @@ from .gh import GitHub
 
 CHECK_NAME = "Catalog Core"
 ICON = {V.REGRESSION: "❌", V.FAIL: "❌", V.INFRA: "⚠️", V.FLAKY: "🟡", V.BROKEN_ON_BASE: "⚪", V.PASS: "✅"}
-LABEL = {V.REGRESSION: "regression", V.FAIL: "failure", V.INFRA: "CI infrastructure error",
-         V.FLAKY: "flaky", V.BROKEN_ON_BASE: "already broken on base", V.PASS: "passed"}
+NAME = {V.REGRESSION: ("regression", "regressions"), V.FAIL: ("failure", "failures"),
+        V.INFRA: ("CI error", "CI errors"), V.FLAKY: ("flaky", "flaky"),
+        V.BROKEN_ON_BASE: ("already broken", "already broken"), V.PASS: ("passed", "passed")}
 MAX_SUMMARY = 60000      # check run summary limit is 65535
 
 
@@ -28,18 +29,46 @@ def short(sha: str | None) -> str:
     return (sha or "")[:10]
 
 
+def n_configs(plan: dict) -> int:
+    return sum(len(c["variants"]) for c in plan.get("cells", []))
+
+
+def plural(n: int, one: str, many: str | None = None) -> str:
+    return f"{n} {one if n == 1 else (many or one + 's')}"
+
+
 def title(plan: dict, verdicts: list[V.Verdict]) -> str:
     if plan.get("errors"):
-        return f"❌ Not tested: {len(plan['errors'])} problem(s) with the PR set"
+        more = f" (+{len(plan['errors']) - 1} more)" if len(plan["errors"]) > 1 else ""
+        return f"❌ Not tested: {plan['errors'][0][:180]}{more}"
     if not plan.get("cells"):
         return "✅ No app uses the changed repositories"
     count = collections.Counter(v.verdict for v in verdicts)
-    parts = [f"{count[k]} {LABEL[k]}" for k in V.ORDER if count[k] and k != V.PASS]
+    total = len(verdicts)
+    if count[V.PASS] == total:
+        return f"✅ All {plural(total, 'configuration')} passed"
+    parts = []
+    for k in V.ORDER[:-1]:
+        if count[k]:
+            parts.append(f"{count[k]} {NAME[k][0] if count[k] == 1 else NAME[k][1]}")
     sources = {v.inherited_from for v in verdicts if v.verdict == V.REGRESSION}
-    if parts and count[V.REGRESSION] and None not in sources:
+    if count[V.REGRESSION] and None not in sources:
         parts[0] += f" (inherited from {', '.join(sorted(sources))})"
-    head = ICON[next((k for k in V.ORDER if count[k]), V.PASS)]
-    return f"{head} " + (" · ".join(parts + [f"{count[V.PASS]} passed"]) if parts else f"all {count[V.PASS]} passed")
+    head = ICON[next(k for k in V.ORDER if count[k])]
+    return f"{head} " + " · ".join(parts + [f"{count[V.PASS]}/{total} passed"])
+
+
+def describe(configs: list[tuple[str, str, str]]) -> str:
+    """Compact list of (app, compiler, variant): a cross product when it is one."""
+    apps = sorted({a for a, _, _ in configs})
+    ccs = sorted({c for _, c, _ in configs})
+    vs = sorted({v for _, _, v in configs})
+    if len(configs) == len(apps) * len(ccs) * len(vs):
+        return " × ".join(", ".join(x) for x in (apps, ccs, vs))
+    by_app = collections.defaultdict(list)
+    for a, c, v in sorted(configs):
+        by_app[a].append(f"{c} {v}")
+    return "; ".join(f"{a}: {', '.join(x)}" for a, x in by_app.items())
 
 
 def tested_together(plan: dict) -> list[str]:
@@ -72,43 +101,54 @@ def tested_together(plan: dict) -> list[str]:
     return lines
 
 
+def results(verdicts: list[V.Verdict]) -> list[str]:
+    """One block per distinct failure, worst first, with the actual error."""
+    groups: dict[tuple, list] = collections.defaultdict(list)
+    for v in verdicts:
+        if v.verdict != V.PASS:
+            groups[(v.verdict, v.reason, v.detail)].append((v.app, v.compiler, v.variant))
+    lines = []
+    for (verdict, reason, detail), configs in sorted(groups.items(), key=lambda g: (V.ORDER.index(g[0][0]), -len(g[1]))):
+        label = NAME[verdict][0].capitalize()
+        lines += [f"**{ICON[verdict]} {label}** in {plural(len(configs), 'configuration')}: {describe(configs)}",
+                  "```", reason, "```"]
+        if detail:
+            lines.append(detail)
+        lines.append("")
+    passed = [(v.app, v.compiler, v.variant) for v in verdicts if v.verdict == V.PASS]
+    if passed:
+        lines += [f"<details><summary>✅ Passed: {plural(len(passed), 'configuration')}</summary>", "",
+                  describe(passed), "", "</details>", ""]
+    return lines
+
+
 def render(plan: dict, verdicts: list[V.Verdict] | None, *, running: bool = False) -> str:
     lines: list[str] = [f"> {n}" for n in plan.get("notes", [])] + ([""] if plan.get("notes") else [])
     if plan.get("errors"):
-        lines += ["### Problems (nothing was run)", ""] + [f"- {e}" for e in plan["errors"]] + [""]
+        lines += ["### Not tested", ""] + [f"- {e}" for e in plan["errors"]] + [""]
     if plan.get("untrusted"):
         lines += ["### Waiting for maintainer approval", "",
                   "These PRs are from authors who are not members of the organization, so a maintainer must "
                   f"approve the run before any of their code is executed: [approve here]({plan.get('run_url')}).", ""]
         lines += [f"- {u}" for u in plan["untrusted"]] + [""]
+    if running and plan.get("cells"):
+        lines += [f"### Testing {plural(n_configs(plan), 'configuration')}", ""]
+        apps = collections.defaultdict(list)
+        for c in plan["cells"]:
+            apps[(c["app"], c["why"])].append(c["compiler"])
+        lines += [f"- **{a}** ({', '.join(ccs)}): {why}" for (a, why), ccs in sorted(apps.items())] + [""]
+    elif verdicts:
+        lines += ["### Results", ""] + results(verdicts)
     lines += tested_together(plan)
-
-    if running:
-        lines += ["### Running", ""] + [f"- **{c['app']}** ({c['compiler']}): {c['why']}" for c in plan.get("cells", [])]
-    elif verdicts is not None:
-        bad = [v for v in verdicts if v.verdict != V.PASS]
-        if bad:
-            lines += ["### Results", "", "| | app | compiler | variant | what happened |", "|---|---|---|---|---|"]
-            for v in sorted(bad, key=lambda v: (V.ORDER.index(v.verdict), v.app, v.compiler, v.variant)):
-                lines.append(f"| {ICON[v.verdict]} {LABEL[v.verdict]} | {v.app} | {v.compiler} | {v.variant} | {v.detail} |")
-            lines.append("")
-        passed = collections.defaultdict(list)
-        for v in verdicts:
-            if v.verdict == V.PASS:
-                passed[(v.app, v.compiler)].append(v.variant)
-        if passed:
-            lines += ["<details><summary>Passed</summary>", ""]
-            lines += [f"- {a} ({c}): {', '.join(vs)}" for (a, c), vs in sorted(passed.items())]
-            lines += ["", "</details>", ""]
-        lines += ["Only **regressions** (fails with these PRs, passes without them), failures on scheduled runs "
-                  "and CI errors block. Flaky and already-broken variants are shown but don't block.", ""]
-    if plan.get("cells"):
+    if plan.get("cells") and not running:
         why = sorted({(c["app"], c["why"]) for c in plan["cells"]})
         lines += ["<details><summary>Why these apps</summary>", ""] + [f"- **{a}**: {w}" for a, w in why]
-        if plan.get("untested_apps"):
+        if plan.get("untested_apps") and not plan.get("root"):
             lines.append(f"- not tested (no `.scripts/test/all.sh`): {', '.join(plan['untested_apps'])}")
         lines += ["", "</details>", ""]
-    lines += [f"[Workflow run]({plan.get('run_url')}) · plan `{short(plan.get('plan_hash'))}`"]
+    repo = (plan.get("catalog") or {}).get("repo")
+    help_link = f" · [what the results mean](https://github.com/{repo}/blob/HEAD/.github/ci/README.md)" if repo else ""
+    lines += [f"[Workflow run]({plan.get('run_url')}){help_link} · plan `{short(plan.get('plan_hash'))}`"]
     text = "\n".join(lines)
     return text if len(text) < MAX_SUMMARY else text[:MAX_SUMMARY] + "\n\n…(truncated, see the workflow run)"
 
@@ -178,7 +218,8 @@ def cmd_start(args) -> int:
     elif not plan.get("cells"):
         t, s, st, concl = title(plan, []), render(plan, []), "completed", "success"
     else:
-        t = "⏳ Waiting for maintainer approval" if not plan["trusted"] else f"⏳ Testing {len(plan['cells'])} app/compiler combinations"
+        t = ("⏳ Waiting for maintainer approval" if not plan["trusted"]
+             else f"⏳ Testing {plural(n_configs(plan), 'configuration')}")
         s, st, concl = render(plan, None, running=True), "in_progress", None
     write_step_summary(f"## {t}\n\n{s}")
     check_id = None
@@ -234,11 +275,11 @@ def blame(plan: dict, verdicts: list[V.Verdict], store) -> None:
                 inherited.append(f"[{d['pr']}]({own.get('run_url')})")
         if inherited:
             v.inherited_from = ", ".join(i.split("]")[0].lstrip("[") for i in inherited)
-            v.detail += f"; **inherited**: also fails in the own run of {', '.join(inherited)}"
+            v.detail += f". **Inherited**: it also fails in the own run of {', '.join(inherited)}"
         elif waiting:
-            v.detail += f"; not known yet whether it comes from {', '.join(waiting)} (no own run yet)"
+            v.detail += f". Not known yet whether it comes from {', '.join(waiting)} (no own run yet)"
         else:
-            v.detail += "; the dependencies pass on their own, so it comes from this PR (or their combination)"
+            v.detail += ". The dependencies pass on their own, so it comes from this PR (or the combination)"
 
 
 def nightly_changes(previous: dict | None, verdicts: list[V.Verdict]) -> tuple[list[str], list[str]]:
@@ -319,6 +360,20 @@ def cmd_finish(args) -> int:
     with open(args.plan) as f:
         plan = json.load(f)
     results = load_results(args.results)
+    if os.environ.get("TEST_RESULT") == "cancelled":
+        # Superseded by a newer push (or cancelled by hand): nothing to judge or record.
+        t = "⏹ Cancelled: a newer run replaced this one, or it was cancelled"
+        write_step_summary(f"## {t}")
+        try:
+            gh = GitHub()
+            post_check(gh, plan, status="completed", title_text=t, summary=render(plan, None),
+                       conclusion="cancelled", check_id=args.check_id or None)
+            post_member_checks(gh, plan, status="completed", title_text=t, summary=render(plan, None),
+                               conclusion="cancelled")
+        except Exception as e:
+            print(f"::warning::could not finish the Catalog Core check: {e}")
+        print(t)
+        return 0
     if not results and (review := declined(plan)):
         who = (review.get("user") or {}).get("login", "a maintainer")
         t = f"⛔ Not run: @{who} declined to run this code"
