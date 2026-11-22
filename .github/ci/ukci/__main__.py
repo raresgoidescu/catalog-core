@@ -94,6 +94,10 @@ def main(argv=None) -> int:
     p.add_argument("--check-id", default="")
     p.set_defaults(func=report.cmd_finish)
 
+    p = sub.add_parser("fan-out", help="(CI) re-test PRs that depend on the planned root PR")
+    p.add_argument("--plan", default="plan.json")
+    p.set_defaults(func=report.cmd_fan_out)
+
     args = ap.parse_args(argv)
     return args.func(args)
 

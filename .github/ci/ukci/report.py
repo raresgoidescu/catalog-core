@@ -163,18 +163,141 @@ def load_results(directory: str) -> list[dict]:
     return results
 
 
+def blame(plan: dict, verdicts: list[V.Verdict], store) -> None:
+    """For each regression, say whether a dependency PR breaks it on its own.
+
+    Every PR in the set has its own run (triggered by its own pushes). If
+    that run already fails the same app/compiler/variant, the failure is
+    inherited from it, not caused by the PR being tested here.
+    """
+    deps = [p for p in plan.get("prs", []) if p["used"] and p["pr"] != plan.get("root")]
+    if not deps or store is None:
+        return
+    from .data import own_result
+    for v in verdicts:
+        if v.verdict != V.REGRESSION:
+            continue
+        inherited, waiting = [], []
+        for d in deps:
+            own = own_result(store, d["pr"], d["head_sha"])
+            if own is None:
+                waiting.append(d["pr"])
+                continue
+            mine = next((x for x in own.get("verdicts", []) if (x.get("app"), x.get("compiler"), x.get("variant"))
+                         == (v.app, v.compiler, v.variant)), None)
+            if mine and mine.get("verdict") in (V.REGRESSION, V.FAIL):
+                inherited.append(f"[{d['pr']}]({own.get('run_url')})")
+        if inherited:
+            v.detail += f"; **inherited**: also fails in the own run of {', '.join(inherited)}"
+        elif waiting:
+            v.detail += f"; not known yet whether it comes from {', '.join(waiting)} (no own run yet)"
+        else:
+            v.detail += "; the dependencies pass on their own, so it comes from this PR (or their combination)"
+
+
+def nightly_changes(previous: dict | None, verdicts: list[V.Verdict]) -> tuple[list[str], list[str]]:
+    """(newly failing, recovered) cells compared to the previous scheduled run."""
+    bad = {V.FAIL, V.INFRA, V.REGRESSION}
+    prev = {k: v for k, v in ((previous or {}).get("cells") or {}).items()}
+    broke, fixed = [], []
+    for v in verdicts:
+        k = f"{v.app} {v.compiler} {v.variant}"
+        was_bad, is_bad = prev.get(k) in bad, v.verdict in bad
+        if is_bad and not was_bad and k in prev:
+            broke.append(f"{k}: {v.detail}")
+        elif was_bad and not is_bad:
+            fixed.append(k)
+    return broke, fixed
+
+
+def discord(webhook: str, text: str, mention: str = "") -> None:
+    import urllib.request
+    body = {"content": (mention + "\n" if mention else "") + text[:1900],
+            # Only the configured mention may ping; nothing from test output can.
+            "allowed_mentions": {"parse": ["roles", "users"] if mention else []}}
+    req = urllib.request.Request(webhook, data=json.dumps(body).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "User-Agent": "catalog-core-ci"})
+    try:
+        urllib.request.urlopen(req, timeout=20).read()
+    except Exception as e:      # never fail the run because of a notification
+        print(f"::warning::Discord notification failed: {e}")
+
+
+def notify_nightly(plan: dict, verdicts: list[V.Verdict], t: str, store) -> None:
+    rel = f"nightly/{plan.get('channel', 'staging')}/latest.json"
+    previous = store.read(rel) if store else None
+    broke, fixed = nightly_changes(previous, verdicts)
+    if store:
+        store.write(rel, {"run_url": plan.get("run_url"),
+                          "cells": {f"{v.app} {v.compiler} {v.variant}": v.verdict for v in verdicts}})
+    webhook = os.environ.get("DISCORD_WEBHOOK_URL")
+    if not webhook:
+        return
+    if previous is None:
+        discord(webhook, f"**catalog-core nightly ({plan.get('channel')})**: first recorded run. {t}\n{plan.get('run_url')}")
+    elif broke or fixed:
+        lines = [f"**catalog-core nightly ({plan.get('channel')})**: {t}"]
+        lines += ["**Newly failing**"] + [f"• {b}" for b in broke[:15]] if broke else []
+        lines += ["**Fixed**"] + [f"• {f}" for f in fixed[:15]] if fixed else []
+        lines.append(plan.get("run_url", ""))
+        discord(webhook, "\n".join(lines), os.environ.get("DISCORD_MENTION", "") if broke else "")
+    else:
+        print("nightly: nothing changed since the previous run; no Discord message")
+
+
+def open_store(write: bool):
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        return None
+    from .data import Store
+    try:
+        return Store(repo, os.environ.get("CI_DATA_TOKEN") if write else None).open()
+    except Exception as e:
+        print(f"::warning::ci-data unavailable: {e}")
+        return None
+
+
 def cmd_finish(args) -> int:
     with open(args.plan) as f:
         plan = json.load(f)
-    verdicts = V.judge(plan, load_results(args.results)) if not plan.get("errors") else []
+    results = load_results(args.results)
+    verdicts = V.judge(plan, results) if not plan.get("errors") else []
+    store = open_store(write=True)
+    blame(plan, verdicts, store)
     concl = V.conclusion(plan, verdicts)
     t, s = title(plan, verdicts), render(plan, verdicts)
     write_step_summary(f"## {t}\n\n{s}")
+    report = {"plan_hash": plan["plan_hash"], "conclusion": concl, "title": t,
+              "verdicts": [v.__dict__ for v in verdicts]}
     with open(args.out, "w") as f:
-        json.dump({"plan_hash": plan["plan_hash"], "conclusion": concl, "title": t,
-                   "verdicts": [v.__dict__ for v in verdicts]}, f, indent=2)
+        json.dump(report, f, indent=2)
     if not plan.get("errors") and plan.get("cells"):
         post_check(GitHub(), plan, status="completed", title_text=t, summary=s, conclusion=concl,
                    check_id=args.check_id or None)
+    if plan.get("event") == "schedule":
+        notify_nightly(plan, verdicts, t, store)
+    if store and os.environ.get("CI_DATA_TOKEN"):
+        from .data import record_run
+        record_run(store, plan, report, results)
+        store.commit_and_push(f"{plan.get('event')}: {plan.get('root') or plan.get('channel')}: {concl}")
     print(t)
     return 0 if concl == "success" else 1
+
+
+def cmd_fan_out(args) -> int:
+    """Re-test PRs that were tested together with this one (they depend on it)."""
+    with open(args.plan) as f:
+        plan = json.load(f)
+    if not plan.get("fan_out") or not plan.get("root") or plan.get("errors"):
+        return 0
+    store = open_store(write=False)
+    if store is None:
+        return 0
+    from .data import dependents
+    gh = GitHub()
+    for ref in dependents(store, plan["root"]):
+        repo, _, n = ref.partition("#")
+        print(f"{plan['root']} changed: re-testing {ref}, which was tested together with it")
+        gh.request("POST", f"/repos/{os.environ['GITHUB_REPOSITORY']}/dispatches",
+                   {"event_type": "catalog_pr", "client_payload": {"repo": repo, "number": n, "cascade": "false"}})
+    return 0

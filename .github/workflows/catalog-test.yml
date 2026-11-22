@@ -107,6 +107,29 @@ jobs:
           path: plan.json
           retention-days: 14
 
+  # A PR changed: re-test the PRs that were last tested together with it
+  # (they depend on it). Those runs don't fan out again, so cycles end here.
+  fan-out:
+    needs: plan
+    if: github.event_name == 'repository_dispatch' && needs.plan.outputs.ok == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: write     # repository_dispatch to this repository
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: plan
+
+      - name: Re-test dependent PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -m ukci fan-out --plan plan.json
+
   test:
     needs: plan
     if: needs.plan.outputs.ok == 'true' && needs.plan.outputs.has_cells == 'true'
@@ -166,7 +189,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
-      contents: read
+      contents: write     # append results to the ci-data branch
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -196,6 +219,9 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           CHECK_ID: ${{ needs.plan.outputs.check_id }}
+          CI_DATA_TOKEN: ${{ github.token }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_MENTION: ${{ vars.DISCORD_MENTION }}
         run: python3 -m ukci report --plan plan.json --results results --out verdicts.json --check-id "$CHECK_ID"
 
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0

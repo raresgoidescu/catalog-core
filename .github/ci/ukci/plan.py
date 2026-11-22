@@ -71,11 +71,20 @@ class Planner:
                             "merge_sha": f.pr.merge_sha, "base_ref": f.pr.base_ref, "via": f.via,
                             "used": id(f) in selected_ids}
                            for f in res.prs]
-            if res.prs:
-                root_pr = res.prs[0].pr
-                plan["root_head_sha"] = root_pr.head_sha
-                plan["root_repo"] = root_pr.repo
-                channel = root_pr.base_ref if root_pr.repo.split("/")[1] != "catalog-core" else (channel or "staging")
+            root_found = next((f for f in res.prs if f.pr.ref.lower() == str(root)), None)
+            if res.root_state in ("merged", "closed"):
+                # The root PR was merged or closed meanwhile (e.g. a late
+                # fan-out from a dependency): nothing to test, nothing to report.
+                plan["errors"] = []
+                plan["root_closed"] = True
+                plan["notes"].append(f"{root} is no longer open; nothing to test")
+                return self._finish(plan, [], {}, {}, None)
+            if root_found is None:
+                return self._finish(plan, [], {}, {}, None)      # resolution errors explain why
+            root_pr = root_found.pr
+            plan["root_head_sha"] = root_pr.head_sha
+            plan["root_repo"] = root_pr.repo
+            channel = root_pr.base_ref if root_pr.repo.split("/")[1] != "catalog-core" else (channel or "staging")
         channel = channel or "staging"
         plan["channel"] = channel
         if plan["errors"]:
@@ -209,6 +218,8 @@ def main(args) -> int:
             max_prs=int(env("CI_MAX_DEP_PRS", "8")),
         )
     plan["event"] = event_name
+    plan["fan_out"] = (event_name == "repository_dispatch"
+                       and str((event.get("client_payload") or {}).get("cascade", "true")).lower() != "false")
     plan["run_url"] = f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{repository}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '0')}"
 
     with open(args.out, "w") as f:

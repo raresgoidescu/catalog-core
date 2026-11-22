@@ -187,6 +187,11 @@ class ResolveTest(unittest.TestCase):
         res = run(FakeGitHub(pr("unikraft/unikraft", 1, base="feature-x")))
         self.assertIn("only PRs to stable, staging are tested", res.errors[0])
 
+    def test_root_state(self):
+        self.assertEqual(run(FakeGitHub(pr("unikraft/unikraft", 1))).root_state, "open")
+        self.assertEqual(run(FakeGitHub(pr("unikraft/unikraft", 1, state="closed", merged=True))).root_state, "merged")
+        self.assertIsNone(run(FakeGitHub()).root_state)
+
     def test_missing_pr(self):
         res = run(FakeGitHub(pr("unikraft/unikraft", 1, body="Depends-On: lib-musl#404")))
         self.assertIn("no such pull request", res.errors[0])

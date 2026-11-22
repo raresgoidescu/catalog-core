@@ -60,6 +60,7 @@ class Resolution:
     dropped: list[tuple[str, str]] = field(default_factory=list)   # (ref, reason)
     errors: list[str] = field(default_factory=list)
     untrusted: list[str] = field(default_factory=list)
+    root_state: str | None = None      # "open" | "merged" | "closed" | None (not fetched)
 
     @property
     def trusted(self) -> bool:
@@ -118,6 +119,8 @@ def resolve(gh, root: Ref, *, allowed_owners: set[str], trusted_associations: se
             res.errors.append(f"{ref} (from {via}): no such pull request")
             continue
         fetched.append(Found(pr, via))
+        if ref == root:
+            res.root_state = "merged" if pr.merged else pr.state
         if len(fetched) > max_prs:
             res.errors.append(f"more than {max_prs} PRs in the dependency set; split the change up")
             break
