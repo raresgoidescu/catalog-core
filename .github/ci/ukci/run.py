@@ -152,8 +152,8 @@ def main(args) -> int:
     variants = [v for v in app.variants if not args.variants or v.name in args.variants.split(",")]
     out = os.path.abspath(args.out)
     os.makedirs(out, exist_ok=True)
-    sudo = os.environ.get("CI_SUDO", "1") == "1"
-    timeout_s = int(os.environ.get("CI_VARIANT_TIMEOUT", "1200"))
+    sudo = (os.environ.get("CI_SUDO") or "1") == "1"
+    timeout_s = int(os.environ.get("CI_VARIANT_TIMEOUT") or "1200")
 
     result = {"app": args.app, "compiler": args.compiler, "plan_hash": plan["plan_hash"],
               "tools": tool_versions(), "attempts": [], "infra_error": None}

@@ -26,8 +26,13 @@ SLUG_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 LEGACY_TYPES = {"unikraft_open_pr", "musl_open_pr", "lwip_open_pr", "libelf_open_pr", "elfloader_open_pr"}
 
 
+def env(name: str, default: str) -> str:
+    """Environment setting; unset repository variables arrive as ''."""
+    return os.environ.get(name) or default
+
+
 def env_list(name: str, default: str) -> list[str]:
-    return [x.strip() for x in os.environ.get(name, default).split(",") if x.strip()]
+    return [x.strip() for x in env(name, default).split(",") if x.strip()]
 
 
 class Planner:
@@ -187,7 +192,7 @@ def main(args) -> int:
     inputs = event.get("inputs") or {}
 
     planner = Planner(GitHub(), repository=repository, sha=os.environ["GITHUB_SHA"],
-                      upstream_org=os.environ.get("CI_UPSTREAM_ORG", repos.UPSTREAM_ORG))
+                      upstream_org=env("CI_UPSTREAM_ORG", repos.UPSTREAM_ORG))
     try:
         root = root_from_event(event_name, event, repository)
     except ValueError as e:
@@ -201,7 +206,7 @@ def main(args) -> int:
             compilers=[c for c in (inputs.get("compilers") or ",".join(env_list("CI_COMPILERS", "gcc,clang"))).split(",") if c],
             trusted_associations=set(env_list("CI_TRUSTED_ASSOCIATIONS", "OWNER,MEMBER,COLLABORATOR")),
             channels=set(env_list("CI_CHANNELS", "staging,stable")),
-            max_prs=int(os.environ.get("CI_MAX_DEP_PRS", "8")),
+            max_prs=int(env("CI_MAX_DEP_PRS", "8")),
         )
     plan["event"] = event_name
     plan["run_url"] = f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{repository}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '0')}"
