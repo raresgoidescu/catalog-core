@@ -86,6 +86,16 @@ class Planner:
             plan["root_head_sha"] = root_pr.head_sha
             plan["root_repo"] = root_pr.repo
             channel = root_pr.base_ref if root_pr.repo.split("/")[1] != "catalog-core" else (channel or "staging")
+            # PRs in a cycle with the root resolve to this very set: test it once.
+            cycle = res.cycle()
+            heads = {f.pr.ref.lower(): f.pr for f in res.prs}
+            plan["cycle"] = [{"pr": r, "repo": heads[r].repo, "head_sha": heads[r].head_sha} for r in cycle if r in heads]
+            if len(cycle) > 1 and cycle[0] != str(root) and not plan["errors"]:
+                plan["delegate_to"] = cycle[0]
+                plan["notes"].append(f"{root} and {cycle[0]} depend on each other, so they are tested "
+                                     f"together in the run for {cycle[0]}")
+                plan["channel"] = channel
+                return self._finish(plan, [], {}, {}, None)
         channel = channel or "staging"
         plan["channel"] = channel
         if plan["errors"]:
@@ -207,6 +217,14 @@ def fetch_commit(url: str, sha: str, dest: str) -> None:
     git("-c", "advice.detachedHead=false", "checkout", "-q", "FETCH_HEAD")
 
 
+def check_repos(plan: dict) -> str:
+    """Repos (names, under the root's owner) whose PRs get a check from this run:
+    the root and, if this run tests a cycle, every PR in it."""
+    owner, _, name = (plan.get("root_repo") or "/").partition("/")
+    names = {c["repo"].split("/")[1] for c in plan.get("cycle", []) if c["repo"].split("/")[0] == owner}
+    return ",".join(sorted((names | {name}) - {""}))
+
+
 def root_from_event(event_name: str, event: dict, repository: str) -> Ref | None:
     if event_name == "repository_dispatch":
         payload = event.get("client_payload") or {}
@@ -270,6 +288,7 @@ def main(args) -> int:
         "root_repo": plan.get("root_repo", ""),
         "root_repo_owner": (plan.get("root_repo") or "/").split("/")[0],
         "root_repo_name": (plan.get("root_repo") or "/").split("/")[1],
+        "check_repos": check_repos(plan),
         "root_head_sha": plan.get("root_head_sha", ""),
     }
     if os.environ.get("GITHUB_OUTPUT"):

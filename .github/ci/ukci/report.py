@@ -41,12 +41,21 @@ def title(plan: dict, verdicts: list[V.Verdict]) -> str:
 def tested_together(plan: dict) -> list[str]:
     lines = []
     if plan.get("prs"):
-        lines += ["### Tested together", "", "| PR | commit | why |", "|---|---|---|"]
+        tested = {e.get("pr", ""): e for e in plan.get("lock", {}).values()}
+        dropped = {d["pr"]: d["reason"] for d in plan.get("dropped", [])}
+        lines += ["### Tested together", "", "| PR | tested as | why |", "|---|---|---|"]
         for p in plan["prs"]:
-            note = p["via"] if p["used"] else f"{p['via']}; superseded by a PR stacked on top"
-            lines.append(f"| [{p['pr']}]({p['url']}) {p['title'][:60]} | `{short(p['merge_sha'])}` (merged into `{p['base_ref']}`) | {note} |")
-        for d in plan.get("dropped", []):
-            lines.append(f"| {d['pr']} | – | not used: {d['reason']} |")
+            entry = next((e for label, e in tested.items() if p["pr"] in label.split(" + ")), None)
+            if not p["used"]:
+                how = f"not used: {dropped.get(p['pr'], 'superseded')}"
+            elif entry and " + " in entry["pr"]:
+                how = f"`{short(entry['sha'])}`: merged together with the other {entry['repo'].split('/')[1]} PRs into `{p['base_ref']}`"
+            else:
+                how = f"`{short((entry or {}).get('sha') or p['merge_sha'])}`: merged into `{p['base_ref']}`"
+            lines.append(f"| [{p['pr']}]({p['url']}) {p['title'][:60]} | {how} | {p['via']} |")
+        for ref, why in dropped.items():
+            if not any(p["pr"] == ref for p in plan["prs"]):
+                lines.append(f"| {ref} | not used: {why} | |")
         lines.append("")
     if plan.get("lock"):
         lines += ["<details><summary>Exact commits</summary>", "", "| repo | commit | from |", "|---|---|---|"]
@@ -60,7 +69,7 @@ def tested_together(plan: dict) -> list[str]:
 
 
 def render(plan: dict, verdicts: list[V.Verdict] | None, *, running: bool = False) -> str:
-    lines: list[str] = []
+    lines: list[str] = [f"> {n}" for n in plan.get("notes", [])] + ([""] if plan.get("notes") else [])
     if plan.get("errors"):
         lines += ["### Problems (nothing was run)", ""] + [f"- {e}" for e in plan["errors"]] + [""]
     if plan.get("untrusted"):
@@ -123,6 +132,29 @@ def post_check(gh: GitHub, plan: dict, *, status: str, title_text: str, summary:
     return str(gh.request("POST", f"/repos/{repo}/check-runs", body)["id"])
 
 
+def post_member_checks(gh: GitHub, plan: dict, *, status: str, title_text: str, summary: str,
+                       conclusion: str | None = None) -> None:
+    """Finish the check on the other PRs of a cycle this run tested."""
+    if not gh.token:
+        return
+    for m in plan.get("cycle", []):
+        if m["pr"] == plan.get("root"):
+            continue
+        existing = gh.get(f"/repos/{m['repo']}/commits/{m['head_sha']}/check-runs?check_name={CHECK_NAME}")
+        ids = [c["id"] for c in (existing or {}).get("check_runs", [])]
+        body = {"name": CHECK_NAME, "head_sha": m["head_sha"], "status": status, "details_url": plan.get("run_url"),
+                "output": {"title": title_text[:250], "summary": summary}}
+        if conclusion:
+            body["conclusion"] = conclusion
+        try:
+            if ids:
+                gh.request("PATCH", f"/repos/{m['repo']}/check-runs/{ids[0]}", body)
+            else:
+                gh.request("POST", f"/repos/{m['repo']}/check-runs", body)
+        except Exception as e:     # e.g. the token has no access to that repo
+            print(f"::warning::could not update the check on {m['pr']}: {e}")
+
+
 def write_step_summary(text: str) -> None:
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if path:
@@ -134,7 +166,9 @@ def cmd_start(args) -> int:
     with open(args.plan) as f:
         plan = json.load(f)
     gh = GitHub()
-    if plan.get("errors"):
+    if plan.get("delegate_to"):
+        t, s, st, concl = (f"⏳ Tested together with {plan['delegate_to']}", render(plan, None), "in_progress", None)
+    elif plan.get("errors"):
         t, s, st, concl = title(plan, []), render(plan, []), "completed", "failure"
     elif not plan.get("cells"):
         t, s, st, concl = title(plan, []), render(plan, []), "completed", "success"
@@ -143,6 +177,8 @@ def cmd_start(args) -> int:
         s, st, concl = render(plan, None, running=True), "in_progress", None
     write_step_summary(f"## {t}\n\n{s}")
     check_id = post_check(gh, plan, status=st, title_text=t, summary=s, conclusion=concl)
+    if plan.get("cells") and not plan.get("delegate_to"):
+        post_member_checks(gh, plan, status=st, title_text=t, summary=s)
     if check_id and os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"check_id={check_id}\n")
@@ -272,8 +308,10 @@ def cmd_finish(args) -> int:
     with open(args.out, "w") as f:
         json.dump(report, f, indent=2)
     if not plan.get("errors") and plan.get("cells"):
-        post_check(GitHub(), plan, status="completed", title_text=t, summary=s, conclusion=concl,
+        gh = GitHub()
+        post_check(gh, plan, status="completed", title_text=t, summary=s, conclusion=concl,
                    check_id=args.check_id or None)
+        post_member_checks(gh, plan, status="completed", title_text=t, summary=s, conclusion=concl)
     if plan.get("event") == "schedule":
         notify_nightly(plan, verdicts, t, store)
     if store and os.environ.get("CI_DATA_TOKEN"):
@@ -290,14 +328,24 @@ def cmd_fan_out(args) -> int:
         plan = json.load(f)
     if not plan.get("fan_out") or not plan.get("root") or plan.get("errors"):
         return 0
+    gh = GitHub()
+
+    def dispatch(ref: str, cascade: str) -> None:
+        repo, _, n = ref.partition("#")
+        gh.request("POST", f"/repos/{os.environ['GITHUB_REPOSITORY']}/dispatches",
+                   {"event_type": "catalog_pr", "client_payload": {"repo": repo, "number": n, "cascade": cascade}})
+
+    if plan.get("delegate_to"):
+        print(f"{plan['root']} changed: running the shared test for {plan['delegate_to']}")
+        dispatch(plan["delegate_to"], "true")
+        return 0
     store = open_store(write=False)
     if store is None:
         return 0
     from .data import dependents
-    gh = GitHub()
+    in_cycle = {m["pr"] for m in plan.get("cycle", [])}
     for ref in dependents(store, plan["root"]):
-        repo, _, n = ref.partition("#")
-        print(f"{plan['root']} changed: re-testing {ref}, which was tested together with it")
-        gh.request("POST", f"/repos/{os.environ['GITHUB_REPOSITORY']}/dispatches",
-                   {"event_type": "catalog_pr", "client_payload": {"repo": repo, "number": n, "cascade": "false"}})
+        if ref not in in_cycle:
+            print(f"{plan['root']} changed: re-testing {ref}, which was tested together with it")
+            dispatch(ref, "false")
     return 0

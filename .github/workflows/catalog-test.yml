@@ -69,6 +69,7 @@ jobs:
       check_id: ${{ steps.check.outputs.check_id }}
       root_repo_owner: ${{ steps.plan.outputs.root_repo_owner }}
       root_repo_name: ${{ steps.plan.outputs.root_repo_name }}
+      check_repos: ${{ steps.plan.outputs.check_repos }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -94,7 +95,7 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ steps.plan.outputs.root_repo_owner }}
-          repositories: ${{ steps.plan.outputs.root_repo_name }}
+          repositories: ${{ steps.plan.outputs.check_repos }}
           permission-checks: write
 
       - name: Post Catalog Core check
@@ -204,7 +205,7 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ needs.plan.outputs.root_repo_owner }}
-          repositories: ${{ needs.plan.outputs.root_repo_name }}
+          repositories: ${{ needs.plan.outputs.check_repos }}
           permission-checks: write
 
       - name: Judge results and finish the check

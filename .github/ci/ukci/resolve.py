@@ -62,6 +62,27 @@ class Resolution:
     untrusted: list[str] = field(default_factory=list)
     root_state: str | None = None      # "open" | "merged" | "closed" | None (not fetched)
     combine: dict[str, list[Found]] = field(default_factory=dict)  # repo path -> PRs to merge together
+    edges: set[tuple[str, str]] = field(default_factory=set)       # (ref, Depends-On target ref)
+
+    def cycle(self) -> list[str]:
+        """Open PRs that depend on the root *and* that the root depends on.
+
+        They resolve to exactly the same set, so testing them once is enough:
+        the first of them (sorted) runs, the others reuse its result.
+        """
+        def reach(start: str, forward: bool) -> set[str]:
+            seen, todo = {start}, [start]
+            while todo:
+                n = todo.pop()
+                for a, b in self.edges:
+                    x, y = (a, b) if forward else (b, a)
+                    if x == n and y not in seen:
+                        seen.add(y)
+                        todo.append(y)
+            return seen
+        root = str(self.root)
+        open_refs = {f.pr.ref.lower() for f in self.prs}
+        return sorted((reach(root, True) & reach(root, False)) & (open_refs | {root}))
 
     @property
     def trusted(self) -> bool:
@@ -130,6 +151,7 @@ def resolve(gh, root: Ref, *, allowed_owners: set[str], trusted_associations: se
             deps, errs = parse_depends_on(text, pr.repo)
             res.errors += [f"{pr.ref} {where}: {e}" for e in errs]
             for d in deps:
+                res.edges.add((pr.ref.lower(), str(d)))
                 if d not in seen:
                     seen.add(d)
                     queue.append((d, f"Depends-On in {pr.ref} {where}"))

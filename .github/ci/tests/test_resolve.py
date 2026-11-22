@@ -92,6 +92,14 @@ class ResolveTest(unittest.TestCase):
         self.assertEqual(a.errors + b.errors, [])
         self.assertEqual(self.paths(a), self.paths(b))
 
+    def test_cycle_members(self):
+        gh = FakeGitHub(pr("unikraft/unikraft", 1, body="Depends-On: lib-musl#12, lib-lwip#40"),
+                        pr("unikraft/lib-musl", 12, body="Depends-On: unikraft#1"),
+                        pr("unikraft/lib-lwip", 40))
+        self.assertEqual(run(gh).cycle(), ["unikraft/lib-musl#12", "unikraft/unikraft#1"])
+        self.assertEqual(run(gh, "unikraft/lib-lwip#40").cycle(), ["unikraft/lib-lwip#40"])
+        self.assertEqual(run(FakeGitHub(pr("unikraft/unikraft", 1))).cycle(), ["unikraft/unikraft#1"])
+
     # 5
     def test_diamond_fetches_each_pr_once(self):
         gh = FakeGitHub(pr("unikraft/unikraft", 1, body="Depends-On: lib-musl#12, lib-lwip#40"),
