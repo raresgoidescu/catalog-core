@@ -1,0 +1,329 @@
+{
+ "channel": "staging",
+ "conclusion": "success",
+ "event": "workflow_dispatch",
+ "lock": {
+  "apps/elfloader": {
+   "base_sha": null,
+   "parts": [],
+   "pr": "raresgoidescu/app-elfloader#3",
+   "repo": "raresgoidescu/app-elfloader",
+   "sha": "828fb7e2e16c8a12b05d5c17dd6f745272a9f357",
+   "source": "raresgoidescu/app-elfloader#3 merged into staging"
+  },
+  "libs/libelf": {
+   "base_sha": "dd57c070dae9e8f398406ef9eaf6a6a25a189c1c",
+   "parts": [
+    {
+     "label": "raresgoidescu/lib-libelf#2",
+     "sha": "b5169dc75f4298499751c3f24b077b9c996a1a33"
+    },
+    {
+     "label": "raresgoidescu/lib-libelf#3",
+     "sha": "cc972533f5186386aae56c18c35bab1be9ad1914"
+    },
+    {
+     "label": "raresgoidescu/lib-libelf#4",
+     "sha": "bf14eb161642b13ffd0cad24c8138e9252108058"
+    }
+   ],
+   "pr": "raresgoidescu/lib-libelf#2 + raresgoidescu/lib-libelf#3 + raresgoidescu/lib-libelf#4",
+   "repo": "raresgoidescu/lib-libelf",
+   "sha": "b7cc5359748cd4e237726da6989f4a0da6cb8ada",
+   "source": "raresgoidescu/lib-libelf#2 + raresgoidescu/lib-libelf#3 + raresgoidescu/lib-libelf#4 merged together into staging"
+  },
+  "libs/lwip": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-lwip",
+   "sha": "ec55ae17618feeb57c8c10109bcf5c42723e8e95",
+   "source": "staging"
+  },
+  "unikraft": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/unikraft",
+   "sha": "7a2cdc1554666de326eb83da1a364653b93e610d",
+   "source": "staging"
+  }
+ },
+ "plan_hash": "2a8fedfceba73b41a9085db521d19df0db227130ae934ba0b9060c2d791df0f5",
+ "prs": [
+  {
+   "base_ref": "staging",
+   "head_sha": "b5169dc75f4298499751c3f24b077b9c996a1a33",
+   "note": "",
+   "ref": "raresgoidescu/lib-libelf#2",
+   "title": "scenario A: L1",
+   "url": "https://github.com/raresgoidescu/lib-libelf/pull/2",
+   "used": true,
+   "via": "root"
+  },
+  {
+   "base_ref": "staging",
+   "head_sha": "fecf60a9f2246b3765f510b525f48db07c28989c",
+   "note": "",
+   "ref": "raresgoidescu/app-elfloader#3",
+   "title": "scenario A: E1",
+   "url": "https://github.com/raresgoidescu/app-elfloader/pull/3",
+   "used": true,
+   "via": "Depends-On in raresgoidescu/lib-libelf#2 description"
+  },
+  {
+   "base_ref": "staging",
+   "head_sha": "cc972533f5186386aae56c18c35bab1be9ad1914",
+   "note": "",
+   "ref": "raresgoidescu/lib-libelf#3",
+   "title": "scenario A: L2 (stacked on L1)",
+   "url": "https://github.com/raresgoidescu/lib-libelf/pull/3",
+   "used": true,
+   "via": "Depends-On in raresgoidescu/app-elfloader#3 description"
+  },
+  {
+   "base_ref": "staging",
+   "head_sha": "bf14eb161642b13ffd0cad24c8138e9252108058",
+   "note": "",
+   "ref": "raresgoidescu/lib-libelf#4",
+   "title": "scenario A: L3 (independent)",
+   "url": "https://github.com/raresgoidescu/lib-libelf/pull/4",
+   "used": true,
+   "via": "Depends-On in raresgoidescu/app-elfloader#3 description"
+  }
+ ],
+ "root": "raresgoidescu/lib-libelf#2",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45043598663",
+ "time": "2026-11-22T16:25:56+00:00",
+ "timings": [
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 22.7,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.4,
+   "total_s": 23.1,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 12.2,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 12.5,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 20.7,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.4,
+   "total_s": 21.1,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 12.5,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 12.8,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 21.7,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 27.0,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 20.6,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 25.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 24.2,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 29.4,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 18.6,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 23.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 28.4,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 31.6,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 25.4,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 28.6,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 18.4,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 21.6,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 17.4,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 20.5,
+   "variant": "fc.x86_64"
+  }
+ ],
+ "title": "All 12 configurations passed",
+ "tools": {
+  "aarch64-gcc": "aarch64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "clang": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+  "firecracker": "Firecracker v1.7.0",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "image": "ubuntu24 20261116.133.1",
+  "kernel": "7.0.0-1014-aws",
+  "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+  "qemu-aarch64": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+ },
+ "verdicts": [
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  }
+ ]
+}
