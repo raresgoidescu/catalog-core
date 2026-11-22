@@ -1,0 +1,56 @@
+name: dashboard
+
+# Publishes the CI dashboard (GitHub Pages) from the ci-data branch after
+# every catalog-test run. Requires Pages with source "GitHub Actions".
+
+on:
+  workflow_run:  # zizmor: ignore[dangerous-triggers] -- uses nothing from the triggering run; reads main + ci-data only
+    workflows: [catalog-test]
+    types: [completed]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: dashboard
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ci-data
+          path: ci-data
+          persist-credentials: false
+
+      - name: Build
+        env:
+          PYTHONPATH: .github/ci
+        run: python3 -m ukci dashboard --data ci-data --out site
+
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

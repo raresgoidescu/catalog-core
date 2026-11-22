@@ -94,6 +94,12 @@ def main(argv=None) -> int:
     p.add_argument("--check-id", default="")
     p.set_defaults(func=report.cmd_finish)
 
+    from . import dashboard
+    p = sub.add_parser("dashboard", help="build the static dashboard from a ci-data checkout")
+    p.add_argument("--data", default="ci-data")
+    p.add_argument("--out", default="site")
+    p.set_defaults(func=dashboard.main)
+
     p = sub.add_parser("fan-out", help="(CI) re-test PRs that depend on the planned root PR")
     p.add_argument("--plan", default="plan.json")
     p.set_defaults(func=report.cmd_fan_out)
