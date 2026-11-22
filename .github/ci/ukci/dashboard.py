@@ -18,8 +18,6 @@ def load_runs(root: str) -> list[dict]:
                 run = json.load(f)
         except (OSError, json.JSONDecodeError):
             continue
-        for pr in run.get("prs", []):  # records from before plan.json v2 said "pr"
-            pr.setdefault("ref", pr.get("pr", ""))
         runs.append(run)
     return sorted(runs, key=lambda r: r.get("time", ""))
 

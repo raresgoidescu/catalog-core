@@ -60,31 +60,10 @@ class Resolution:
     errors: list[str] = field(default_factory=list)
     untrusted: list[str] = field(default_factory=list)
     root_state: str | None = None  # open | merged | closed | None (not found)
-    edges: set[tuple[str, str]] = field(default_factory=set)
 
     @property
     def trusted(self) -> bool:
         return not self.untrusted
-
-    def cycle(self) -> list[str]:
-        """Open PRs that depend on the root *and* that the root depends on.
-
-        They all resolve to this same set, so one run tests them all.
-        """
-
-        def reach(forward: bool) -> set[str]:
-            seen, todo = {self.root}, [self.root]
-            while todo:
-                n = todo.pop()
-                for a, b in self.edges:
-                    x, y = (a, b) if forward else (b, a)
-                    if x == n and y not in seen:
-                        seen.add(y)
-                        todo.append(y)
-            return seen
-
-        open_refs = {f.pr.ref for f in self.prs}
-        return sorted(reach(True) & reach(False) & (open_refs | {self.root}))
 
 
 def parse_depends_on(text: str, current_repo: str) -> tuple[list[str], list[str]]:
@@ -151,7 +130,6 @@ def resolve(
             deps, errs = parse_depends_on(text, pr.repo)
             res.errors += [f"{pr.ref} {where}: {e}" for e in errs]
             for d in deps:
-                res.edges.add((pr.ref, d))
                 if d not in seen:
                     seen.add(d)
                     queue.append((d, f"Depends-On in {pr.ref} {where}"))
@@ -204,5 +182,7 @@ def resolve(
         if f.pr.mergeable is False:
             res.errors.append(f"{f.pr.ref} can't be merged into `{f.pr.base_ref}` (merge conflict); please rebase it")
         elif f.pr.mergeable is None or not f.pr.merge_sha:
-            res.errors.append(f"GitHub hasn't computed yet whether {f.pr.ref} merges cleanly; re-run in a minute")
+            res.errors.append(
+                f"GitHub hasn't computed yet whether {f.pr.ref} merges cleanly; comment `recheck` in a minute"
+            )
     return res

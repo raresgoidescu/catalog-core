@@ -6,6 +6,7 @@ module only adds the handful of calls CI needs, in CI's own terms.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import subprocess
@@ -45,7 +46,10 @@ class GitHub:
             p = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True, env=env, check=False)
             if p.returncode == 0:
                 return json.loads(p.stdout) if p.stdout.strip() else None
-            transient = any(s in p.stderr for s in ("HTTP 502", "HTTP 503", "HTTP 504", "timeout", "connection reset"))
+            transient = any(
+                s in p.stderr
+                for s in ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "timeout", "connection reset", "EOF")
+            )
             if not transient or attempt == 2:
                 raise GitHubError(f"gh {' '.join(args[:2])}: {p.stderr.strip()[:300]}")
             time.sleep(2 ** (attempt + 1))
@@ -115,12 +119,33 @@ class GitHub:
         pages = self.gh("api", "--paginate", "--slurp", f"/repos/{repo}/pulls/{number}/files?per_page=100")
         return [f["filename"] for page in pages for f in page]
 
-    # --- checks, dispatches, approvals -------------------------------------------
+    def comment(self, repo: str, comment_id: int) -> dict | None:
+        try:
+            return self.api(f"/repos/{repo}/issues/comments/{comment_id}")
+        except GitHubError as e:
+            if "HTTP 404" in str(e):
+                return None
+            raise
 
-    def find_check(self, repo: str, sha: str, name: str) -> int | None:
-        d = self.gh("api", "--method", "GET", f"/repos/{repo}/commits/{sha}/check-runs", "-f", f"check_name={name}")
-        runs = (d or {}).get("check_runs") or []
-        return runs[0]["id"] if runs else None
+    def environment(self, repo: str, name: str) -> dict | None:
+        try:
+            return self.api(f"/repos/{repo}/environments/{name}")
+        except GitHubError as e:
+            if "HTTP 404" in str(e):
+                return None
+            raise
+
+    def file(self, repo: str, path: str, ref: str) -> bytes | None:
+        """A file's content at `ref`, or None if there is none."""
+        try:
+            d = self.api(f"/repos/{repo}/contents/{path}?ref={ref}")
+        except GitHubError as e:
+            if "HTTP 404" in str(e):
+                return None
+            raise
+        return base64.b64decode(d["content"]) if isinstance(d, dict) and d.get("encoding") == "base64" else None
+
+    # --- checks, dispatches, approvals -------------------------------------------
 
     def put_check(self, repo: str, body: dict, check_id: int | None = None) -> int:
         if check_id:
@@ -132,3 +157,8 @@ class GitHub:
 
     def run_approvals(self, repo: str, run_id: str) -> list[dict]:
         return self.api(f"/repos/{repo}/actions/runs/{run_id}/approvals") or []
+
+    def run_jobs(self, repo: str, run_id: str) -> dict[str, str]:
+        """Job name -> URL of its log, for the jobs of this run attempt."""
+        pages = self.gh("api", "--paginate", "--slurp", f"/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100")
+        return {j["name"]: j["html_url"] for page in pages or [] for j in page.get("jobs", [])}

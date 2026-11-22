@@ -2,84 +2,83 @@ name: catalog-test
 
 # Tests changes to Unikraft and its libraries on the apps in this repository.
 #
-#   plan    trusted   reads the GitHub API, resolves Depends-On, pins one
-#                     commit per repo, picks the apps that link the changed
-#                     repos. Never runs PR code.
-#   test    untrusted runs PR code; holds no tokens or secrets. Needs a
-#                     maintainer's approval if any PR author is not a member.
-#   report  trusted   judges the results (regression vs. already broken
-#                     vs. flaky) and finishes the "Catalog Core" check.
+#   plan     trusted    reads the GitHub API, resolves Depends-On, pins one
+#                       commit per repo, picks the apps that link the changed
+#                       repos, posts the check. Never runs PR code.
+#   fan-out  trusted    re-tests the PRs that were tested together with this one.
+#   test     untrusted  runs PR code; holds no token or secret. Waits for a
+#                       maintainer's approval if any PR author isn't trusted.
+#   report   trusted    judges the results (regression / already broken /
+#                       flaky), finishes the check, records, notifies.
 #
-# Apps, their dependencies and variants are read from the app directories;
-# see .github/ci/README.md.
+# See .github/ci/README.md.
 
 on:
   repository_dispatch:
-    # catalog_pr is sent by .github/workflows/dispatch.yml; the others by
-    # older per-repo dispatchers and are accepted until those are replaced.
-    types: [catalog_pr, unikraft_open_pr, musl_open_pr, lwip_open_pr, libelf_open_pr, elfloader_open_pr]
+    types: [catalog_pr]     # sent by .github/workflows/dispatch.yml
   pull_request:
     paths-ignore: ['**.md']
   schedule:
-    - cron: '0 1 * * *'     # staging, nightly
-    - cron: '0 3 * * 0'     # stable, weekly (CI_STABLE_SCHEDULE below)
+    - cron: '0 1 * * *'                 # staging, nightly
+    - cron: &stable-cron '0 3 * * 0'    # stable, weekly
   workflow_dispatch:
     inputs:
       channel:
-        description: Branch of every dependency to test
-        type: choice
-        options: [staging, stable]
+        description: Branch of every dependency to test (staging or stable)
+        type: string
         default: staging
       apps:
-        description: Comma-separated apps (empty = all apps with tests)
+        description: Comma-separated apps (empty = every app with tests)
         type: string
         default: ''
       compilers:
-        description: Comma-separated compilers
+        description: Comma-separated compilers (empty = all)
         type: string
-        default: gcc,clang
+        default: ''
 
 permissions: {}
 
+# One run per PR: a newer event for the same PR replaces the running one.
+# Scheduled and manual runs queue per schedule / channel and are never cancelled.
 concurrency:
   group: >-
-    catalog-test-${{ github.event.client_payload.repo || github.event.client_payload.pr_repo || github.event_name }}-${{
-    github.event.client_payload.number || github.event.client_payload.pr_number || github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+    catalog-test-${{ github.event_name }}-${{
+    github.event.client_payload.repo || github.event.pull_request.number || github.event.schedule ||
+    inputs.channel || github.run_id }}-${{ github.event.client_payload.number || '' }}
+  cancel-in-progress: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'pull_request' }}
 
 env:
-  UKCI: uv run --frozen --project .github/ci python -m ukci
-  # Scheduled runs test staging, except the one with this cron, which tests stable.
-  CI_STABLE_SCHEDULE: '0 3 * * 0'
+  UKCI: uv run --frozen --no-dev --project .github/ci python -m ukci
+  CI_STABLE_SCHEDULE: *stable-cron
 
 jobs:
   plan:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    runs-on: &runner ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: read
     outputs:
-      ok: ${{ steps.plan.outputs.ok }}
-      trusted: ${{ steps.plan.outputs.trusted }}
+      run: ${{ steps.plan.outputs.run }}
+      environment: ${{ steps.plan.outputs.environment }}
       cells: ${{ steps.plan.outputs.cells }}
-      has_cells: ${{ steps.plan.outputs.has_cells }}
       catalog_repo: ${{ steps.plan.outputs.catalog_repo }}
       catalog_sha: ${{ steps.plan.outputs.catalog_sha }}
-      check_id: ${{ steps.check.outputs.check_id }}
       root_repo_owner: ${{ steps.plan.outputs.root_repo_owner }}
       root_repo_name: ${{ steps.plan.outputs.root_repo_name }}
-      check_repos: ${{ steps.plan.outputs.check_repos }}
+      check_id: ${{ steps.check.outputs.check_id }}
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - &checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - &uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.13.7"
           enable-cache: false   # a cache would be writable by jobs that run PR code
 
-      # Planning only reads public data: the read-only GITHUB_TOKEN is enough.
+      # Planning reads public data only: the read-only GITHUB_TOKEN is enough.
       - name: Plan
         id: plan
         env:
@@ -88,56 +87,49 @@ jobs:
           CI_MAX_DEP_PRS: ${{ vars.CI_MAX_DEP_PRS }}
         run: $UKCI plan --out plan.json
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Upload plan
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: plan
           path: plan.json
           retention-days: 14
+          if-no-files-found: ignore
 
-      # The check goes on the root PR in a dependency repo; the token can
-      # only write checks there. (catalog-core's own PRs need no check: the
-      # workflow run shows up on them directly.)
+      # The check goes on the root PR of a dependency repository. Only
+      # repository_dispatch runs have one; the token can write checks there only.
       - name: GitHub App token
         id: token
-        if: steps.plan.outputs.root_repo_name != '' && steps.plan.outputs.root_repo_name != 'catalog-core'
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        if: always() && github.event_name == 'repository_dispatch' && steps.plan.outputs.root_repo_name != ''
+        uses: &app-token actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ steps.plan.outputs.root_repo_owner }}
-          repositories: ${{ steps.plan.outputs.check_repos }}
+          repositories: ${{ steps.plan.outputs.root_repo_name }}
           permission-checks: write
 
-      - name: Post Catalog Core check
+      - name: Post the Catalog Core check
         id: check
-        if: steps.token.outcome == 'success'
+        if: always() && hashFiles('plan.json') != ''
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
         run: $UKCI check-start --plan plan.json
 
-
-  # A PR changed: re-test the PRs that were last tested together with it
-  # (they depend on it). Those runs don't fan out again, so cycles end here.
   fan-out:
     needs: plan
-    if: github.event_name == 'repository_dispatch' && needs.plan.outputs.ok == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    if: github.event_name == 'repository_dispatch'
+    runs-on: *runner
+    timeout-minutes: 10
     permissions:
       contents: write     # repository_dispatch to this repository
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          version: "0.13.7"
-          enable-cache: false   # a cache would be writable by jobs that run PR code
-
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - *checkout
+      - *uv
+      - &download-plan
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: plan
-
       - name: Re-test dependent PRs
         env:
           GH_TOKEN: ${{ github.token }}
@@ -145,12 +137,13 @@ jobs:
 
   test:
     needs: plan
-    if: needs.plan.outputs.ok == 'true' && needs.plan.outputs.has_cells == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    if: needs.plan.outputs.run == 'true'
+    runs-on: *runner
+    timeout-minutes: 150
     permissions: {}
-    # Runs of PRs from non-members wait here for a maintainer's approval.
-    environment: ${{ needs.plan.outputs.trusted != 'true' && 'ci-needs-approval' || '' }}
+    # Runs of PRs by authors who aren't trusted wait in ci-needs-approval for a
+    # maintainer; the plan job refuses to run them if that environment has no reviewers.
+    environment: ${{ needs.plan.outputs.environment }}
     strategy:
       fail-fast: false
       matrix:
@@ -162,25 +155,16 @@ jobs:
           repository: ${{ needs.plan.outputs.catalog_repo }}
           ref: ${{ needs.plan.outputs.catalog_sha }}
           persist-credentials: false
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          version: "0.13.7"
-          enable-cache: false   # a cache would be writable by jobs that run PR code
-
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: plan
-
+      - *uv
+      - *download-plan
       - name: Set up runner
         timeout-minutes: 20
         run: .github/ci/setup-host.sh
-
       - name: Run ${{ matrix.app }} (${{ matrix.compiler }})
         env:
           APP: ${{ matrix.app }}
           COMPILER: ${{ matrix.compiler }}
         run: $UKCI run --plan plan.json --app "$APP" --compiler "$COMPILER" --out results
-
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -191,42 +175,39 @@ jobs:
 
   report:
     needs: [plan, test]
-    if: always() && needs.plan.outputs.ok == 'true' && needs.plan.outputs.has_cells == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # Every run that tested something; and every scheduled run, so a nightly
+    # that couldn't run says so on Discord.
+    if: always() && (needs.plan.outputs.run == 'true' || github.event_name == 'schedule')
+    runs-on: *runner
+    timeout-minutes: 15
     permissions:
       contents: write     # append results to the ci-data branch
-      actions: read       # see whether a maintainer declined to run the tests
+      actions: read       # job log links; whether a maintainer declined to run the tests
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          version: "0.13.7"
-          enable-cache: false   # a cache would be writable by jobs that run PR code
-
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - *checkout
+      - *uv
+      - name: Download plan
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        continue-on-error: true   # missing if the plan job died; the report says so
         with:
           name: plan
-
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - name: Download results
+        if: needs.plan.outputs.run == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: results-*
           path: results
-
       - name: GitHub App token
         id: token
-        if: needs.plan.outputs.check_id != ''
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        if: github.event_name == 'repository_dispatch' && needs.plan.outputs.check_id != ''
+        uses: *app-token
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ needs.plan.outputs.root_repo_owner }}
-          repositories: ${{ needs.plan.outputs.check_repos }}
+          repositories: ${{ needs.plan.outputs.root_repo_name }}
           permission-checks: write
-
-      - name: Judge results and finish the check
+      - name: Judge results, finish the check, record, notify
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           CHECK_ID: ${{ needs.plan.outputs.check_id }}
@@ -235,10 +216,10 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MENTION: ${{ vars.DISCORD_MENTION }}
         run: $UKCI report --plan plan.json --results results --out verdicts.json --check-id "$CHECK_ID"
-
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: verdicts
           path: verdicts.json
           retention-days: 90
+          if-no-files-found: ignore

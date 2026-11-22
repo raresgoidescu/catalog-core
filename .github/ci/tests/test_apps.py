@@ -108,8 +108,10 @@ class DiscoverTest(TempCatalog):
         self.add_app("b", setup='check_exists_and_create_symlink "unikraft"\n')
         self.add_app("c", all_sh=None)  # no tests: never selected
         found = apps.discover(self.root)
+
         def names(changed):
             return [a.name for a in apps.affected(found, changed)]
+
         self.assertEqual(names(["libs/musl"]), ["a"])
         self.assertEqual(names(["unikraft"]), ["a", "b"])
         self.assertEqual(names(["libs/lwip"]), [])

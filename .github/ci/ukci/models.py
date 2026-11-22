@@ -1,8 +1,8 @@
 """The data passed between jobs: plan.json (plan job -> test and report jobs)
 and result.json (test job -> report job).
 
-result.json comes from jobs that ran PR code, so it is untrusted input:
-the report job only accepts it through these models.
+result.json is written by jobs that run PR code, so the report job reads it
+only through these models (bounded strings, no unknown fields).
 """
 
 from __future__ import annotations
@@ -12,14 +12,12 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 Status = Literal["PASS", "FAIL", "TIMEOUT", "BLOCKED", "MISSING"]
+Phase = Literal["build", "run"]
 VerdictName = Literal["PASS", "FLAKY", "BROKEN_ON_BASE", "REGRESSION", "FAIL", "INFRA"]
 
 
 class Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
-
-# --- GitHub ------------------------------------------------------------------
 
 
 class PullRequest(Model):
@@ -30,7 +28,7 @@ class PullRequest(Model):
     head_sha: str
     mergeable: bool | None  # None: GitHub hasn't computed it yet
     merge_sha: str | None  # GitHub's test merge of head into base
-    merge_base_sha: str | None  # the base commit that test merge was made onto
+    merge_base_sha: str | None  # the base commit of that test merge
     author: str
     association: str  # OWNER | MEMBER | COLLABORATOR | CONTRIBUTOR | ...
     title: str = ""
@@ -82,35 +80,36 @@ class PlannedPR(Model):
     note: str = ""  # why it isn't used
 
 
-class CycleMember(Model):
-    ref: str
-    repo: str
-    head_sha: str
-
-
 class CatalogRef(Model):
     repo: str
     sha: str
     source: str
 
 
+class Reused(Model):
+    """A finished run that tested exactly these commits."""
+
+    run_url: str
+    conclusion: str
+    title: str
+    summary: str
+
+
 class Plan(Model):
-    version: Literal[2] = 2
     event: str = ""
     run_url: str = ""
     root: str | None = None  # "owner/repo#N"; None for scheduled/manual runs
     root_repo: str | None = None
     root_head_sha: str | None = None
+    recheck: bool = False  # asked for by a `recheck` comment: never reuse
     channel: str = "staging"
     trusted: bool = True
     untrusted: list[str] = []
     errors: list[str] = []
     notes: list[str] = []
-    prs: list[PlannedPR] = []
-    cycle: list[CycleMember] = []  # PRs that resolve to this same set (incl. the root)
-    delegate_to: str | None = None  # tested in that PR's run instead
-    root_closed: bool = False
+    skip: str = ""  # nothing to do and nothing to report (root merged, recheck not allowed, ...)
     fan_out: bool = False
+    prs: list[PlannedPR] = []
     catalog: CatalogRef | None = None
     catalog_base: CatalogRef | None = None  # catalog-core without a catalog-core PR
     untested_apps: list[str] = []
@@ -118,6 +117,7 @@ class Plan(Model):
     lock: dict[str, LockEntry] = {}
     base_lock: dict[str, LockEntry] = {}
     plan_hash: str = ""
+    reused: Reused | None = None
 
     @property
     def ok(self) -> bool:
@@ -138,7 +138,7 @@ class Plan(Model):
 
 
 class Attempt(Model):
-    variant: str
+    variant: str = Field(max_length=100)
     attempt: Literal["first", "retry", "base"]
     build: Status
     run: Status | None = None  # None: build-only variant
@@ -146,30 +146,25 @@ class Attempt(Model):
     run_s: float | None = None
     total_s: float | None = None
     reason: str = Field("", max_length=400)  # first error line, for people
-    errors: list[str] = Field([], max_length=30)  # every distinct error, normalized, for comparing
-    fetch_error: bool = False
+    fetch_error: bool = False  # the build failed downloading sources
 
     @property
     def ok(self) -> bool:
         return self.build == "PASS" and self.run in (None, "PASS")
 
-    def same_failure(self, other: Attempt) -> bool:
-        """Do both fail in the same way? With parallel builds the first error is a matter of
-        timing, so: the same phase, and at least one error in common."""
-        return bool(self.errors) and self.phase == other.phase and bool(set(self.errors) & set(other.errors))
-
     @property
-    def phase(self) -> str:
+    def phase(self) -> Phase:
+        """The phase that failed (or the last one that ran)."""
         return "build" if self.build != "PASS" else "run"
 
 
 class Result(Model):
-    app: str
-    compiler: str
-    plan_hash: str
+    app: str = Field(max_length=100)
+    compiler: str = Field(max_length=40)
+    plan_hash: str = Field(max_length=64)
     tools: dict[str, str] = {}
-    attempts: list[Attempt] = []
-    infra_error: str | None = None
+    attempts: list[Attempt] = Field([], max_length=200)
+    infra_error: str | None = Field(None, max_length=400)
     new_variants: list[str] = []  # added by a catalog-core PR: nothing to compare to
 
 
@@ -182,8 +177,6 @@ class Verdict(Model):
     variant: str
     verdict: VerdictName
     reason: str = ""  # what failed
-    detail: str = ""  # why this verdict
-    inherited_from: str | None = None  # dependency PR whose own run fails the same way
 
 
 class Report(Model):

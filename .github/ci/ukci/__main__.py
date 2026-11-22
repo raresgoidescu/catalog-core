@@ -21,16 +21,7 @@ from . import dashboard, plan, report, repos, run
 
 
 def cmd_apps(args) -> int:
-    found = apps_mod.discover(args.root)
-    if args.affected is not None:
-        found = apps_mod.affected(found, [p for p in args.affected.split(",") if p])
-    elif not args.all:
-        found = [a for a in found if a.has_tests]
-    print(
-        json.dumps(
-            [a.name for a in found] if args.names else [a.to_dict() for a in found], indent=None if args.names else 2
-        )
-    )
+    print(json.dumps([a.to_dict() for a in apps_mod.discover(args.root)], indent=2))
     return 0
 
 
@@ -60,11 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--root", default=".", help="catalog-core checkout (default: .)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    p = sub.add_parser("apps", help="list the apps CI found")
-    p.add_argument("--affected", metavar="PATHS", help="only apps linking these repo paths, e.g. libs/musl,libs/lwip")
-    p.add_argument("--all", action="store_true", help="include apps without tests")
-    p.add_argument("--names", action="store_true", help="print only a JSON list of names")
-    p.set_defaults(func=cmd_apps)
+    sub.add_parser("apps", help="what CI reads from the app directories").set_defaults(func=cmd_apps)
 
     sub.add_parser("lint", help="check every app can be understood by CI").set_defaults(func=cmd_lint)
 
@@ -87,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--variants", default="", help="comma-separated subset, e.g. qemu.x86_64")
     p.add_argument("--out", default="results")
     p.add_argument("--no-recheck", action="store_true", help="skip the retry and the comparison without the PRs")
+    p.add_argument("--no-sudo", action="store_true", help="don't run the app scripts as root")
+    p.add_argument("--timeout", type=int, default=1200, help="seconds per variant attempt (default: 1200)")
     p.set_defaults(func=run.main)
 
     p = sub.add_parser("report", help="(report job) judge results, finish the check, record, notify")

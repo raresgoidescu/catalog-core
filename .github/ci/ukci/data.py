@@ -1,12 +1,13 @@
 """The ``ci-data`` branch: results as data, written only by trusted jobs.
 
   runs/<yyyy>/<mm>/<dd>/<run>-<attempt>.json   one run: plan, verdicts, timings
-  pr/<owner>__<repo>/<n>/<head_sha>.json        a PR's own result at that head (for blame)
-  deps/<owner>__<repo>/<n>/<owner>__<repo>__<m> marker: PR m was tested with PR n (for fan-out)
-  nightly/<channel>/latest.json                 last scheduled verdicts (for Discord)
+  plans/<plan_hash>.json                        the finished result for those exact commits (reuse)
+  deps/<owner>__<repo>/<n>/<owner>__<repo>__<m> marker: PR m was tested with PR n (fan-out)
+  nightly/<channel>/latest.json                 last scheduled state per configuration (Discord)
 
 Files are written once and never edited (except ``nightly/*/latest.json``,
-which only scheduled runs write), so concurrent pushes rebase cleanly.
+which only scheduled runs write, one at a time), so concurrent pushes rebase
+cleanly.
 """
 
 from __future__ import annotations
@@ -18,23 +19,22 @@ import os
 import subprocess
 import time
 
-from pydantic import BaseModel, ValidationError
-
-from .models import Plan, Report, Result, Verdict
+from .models import Plan, Report, Result, Reused, Verdict
 
 BRANCH = "ci-data"
-
-
-class OwnResult(BaseModel):
-    run_url: str
-    plan_hash: str
-    conclusion: str
-    verdicts: list[Verdict]
 
 
 def _key(ref: str) -> str:
     repo, _, n = ref.partition("#")
     return f"{repo.replace('/', '__')}/{n}"
+
+
+def plan_path(plan_hash: str) -> str:
+    return f"plans/{plan_hash}.json"
+
+
+def config_key(v: Verdict) -> str:
+    return f"{v.app} {v.compiler} {v.variant}"
 
 
 class Store:
@@ -43,6 +43,7 @@ class Store:
     def __init__(self, repo: str, token: str | None, path: str = "ci-data", url: str | None = None):
         self.repo, self.token, self.path = repo, token, path
         self.url = url or f"https://github.com/{repo}"
+        self.pending: dict[str, str] = {}  # written since open(), re-applied if a push races
 
     def git(self, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
         env = dict(os.environ)
@@ -61,10 +62,13 @@ class Store:
         self.git("remote", "add", "origin", self.url, check=False)
         self.git("config", "user.name", "catalog-core CI")
         self.git("config", "user.email", "ci@catalog-core.invalid")
-        if self.git("fetch", "-q", "--depth", "50", "origin", BRANCH, check=False).returncode == 0:
+        fetched = self.git("fetch", "-q", "--depth", "1", "origin", BRANCH, check=False)
+        if fetched.returncode == 0:
             self.git("checkout", "-q", "-B", BRANCH, "FETCH_HEAD")
+        elif "couldn't find remote ref" in fetched.stderr:
+            self.git("checkout", "-q", "--orphan", BRANCH)  # first run ever
         else:
-            self.git("checkout", "-q", "--orphan", BRANCH)
+            raise RuntimeError(f"can't fetch {BRANCH}: {fetched.stderr.strip()}")
         return self
 
     def read(self, rel: str) -> dict | None:
@@ -75,29 +79,36 @@ class Store:
             return None
 
     def write(self, rel: str, obj: dict | str) -> None:
+        self.pending[rel] = obj if isinstance(obj, str) else json.dumps(obj, indent=1, sort_keys=True)
+        self._write(rel, self.pending[rel])
+
+    def _write(self, rel: str, text: str) -> None:
         full = os.path.join(self.path, rel)
         os.makedirs(os.path.dirname(full), exist_ok=True)
         with open(full, "w") as f:
-            f.write(obj if isinstance(obj, str) else json.dumps(obj, indent=1, sort_keys=True))
+            f.write(text)
 
     def push(self, message: str, attempts: int = 5) -> bool:
-        self.git("add", "-A")
-        if self.git("diff", "--cached", "--quiet", check=False).returncode == 0:
-            return True
-        self.git("commit", "-q", "-m", message)
         for i in range(attempts):
+            self.git("add", "-A")
+            if self.git("diff", "--cached", "--quiet", check=False).returncode == 0:
+                return True
+            self.git("commit", "-q", "-m", message)
             if self.git("push", "-q", "origin", f"HEAD:{BRANCH}", check=False).returncode == 0:
                 return True
-            # Someone else pushed meanwhile: replay our new files on top of theirs.
-            if self.git("fetch", "-q", "--depth", "50", "origin", BRANCH, check=False).returncode == 0:
-                self.git("rebase", "-q", "FETCH_HEAD", check=False)
+            # Someone else pushed meanwhile. Nothing here is ever edited by two
+            # runs, so: take their branch and write our files again.
             time.sleep(2 * (i + 1))
+            if self.git("fetch", "-q", "--depth", "1", "origin", BRANCH, check=False).returncode == 0:
+                self.git("reset", "-q", "--hard", "FETCH_HEAD")
+                for rel, text in self.pending.items():
+                    self._write(rel, text)
         print(f"::warning::could not push to {BRANCH} after {attempts} attempts")
         return False
 
     # --- what CI reads and writes ------------------------------------------------
 
-    def record(self, plan: Plan, report: Report, results: list[Result]) -> None:
+    def record(self, plan: Plan, report: Report, results: list[Result], summary: str) -> None:
         now = dt.datetime.now(dt.UTC)
         run = f"{os.environ.get('GITHUB_RUN_ID', '0')}-{os.environ.get('GITHUB_RUN_ATTEMPT', '1')}"
         self.write(
@@ -126,14 +137,15 @@ class Store:
                 "tools": next((r.tools for r in results if r.tools), {}),
             },
         )
-        if plan.root and plan.root_head_sha:
-            own = OwnResult(
-                run_url=plan.run_url, plan_hash=plan.plan_hash, conclusion=report.conclusion, verdicts=report.verdicts
-            )
-            self.write(f"pr/{_key(plan.root)}/{plan.root_head_sha}.json", own.model_dump())
-            for p in plan.prs:
-                if p.ref != plan.root:
-                    self.write(f"deps/{_key(p.ref)}/{plan.root.replace('/', '__').replace('#', '__')}", "")
+        if not plan.root:
+            return
+        # A result is worth reusing only if CI could tell for every configuration.
+        if all(v.verdict != "INFRA" for v in report.verdicts):
+            reused = Reused(run_url=plan.run_url, conclusion=report.conclusion, title=report.title, summary=summary)
+            self.write(plan_path(plan.plan_hash), reused.model_dump())
+        for p in plan.prs:
+            if p.ref != plan.root and p.used:
+                self.write(f"deps/{_key(p.ref)}/{plan.root.replace('/', '__').replace('#', '__')}", "")
 
     def dependents(self, ref: str) -> list[str]:
         """PRs that were tested together with `ref` (so they depend on it)."""
@@ -141,22 +153,11 @@ class Store:
             names = sorted(os.listdir(os.path.join(self.path, "deps", _key(ref))))
         except OSError:
             return []
-        return [f"{o}/{r}#{n}" for o, r, n in (name.split("__") for name in names)]
+        return [f"{o}/{r}#{n}" for o, r, n in (name.split("__") for name in names if name.count("__") == 2)]
 
-    def own_result(self, ref: str, head_sha: str) -> OwnResult | None:
-        data = self.read(f"pr/{_key(ref)}/{head_sha}.json")
-        try:
-            return OwnResult.model_validate(data) if data else None
-        except ValidationError:
-            return None  # written by an older version of CI
+    def nightly(self, channel: str) -> dict | None:
+        """The last scheduled run of `channel`: {"run_url", "error", "cells": {config: verdict}}."""
+        return self.read(f"nightly/{channel}/latest.json")
 
-    def nightly(self, channel: str) -> dict[str, str] | None:
-        """Last scheduled run's verdict per configuration ("app compiler variant")."""
-        data = self.read(f"nightly/{channel}/latest.json")
-        return data.get("cells") if data else None
-
-    def set_nightly(self, plan: Plan, verdicts: list[Verdict]) -> None:
-        self.write(
-            f"nightly/{plan.channel}/latest.json",
-            {"run_url": plan.run_url, "cells": {f"{v.app} {v.compiler} {v.variant}": v.verdict for v in verdicts}},
-        )
+    def set_nightly(self, channel: str, state: dict) -> None:
+        self.write(f"nightly/{channel}/latest.json", state)

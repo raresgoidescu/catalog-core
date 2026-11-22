@@ -1,12 +1,13 @@
 name: catalog-core-dispatch
 
-# Reusable workflow called by every dependency repo (unikraft, lib-*, app-*):
-# it tells catalog-core "PR <repo>#<n> changed" when a PR is opened, pushed
-# or edited, and when someone comments `recheck` on it (as in Zuul).
-# catalog-core re-reads everything else from the GitHub API and never trusts
-# this payload. No PR code is checked out or run here.
+# Reusable workflow called by every dependency repo (unikraft, lib-*, app-*).
+# It tells catalog-core "PR <repo>#<n> changed" (opened, pushed, description
+# edited) or "someone commented `recheck` on it". No PR code is checked out
+# or run here. The payload is only a pointer: catalog-core reads the PR and
+# the comment back from the API and decides there whether to test, and who
+# may ask for a recheck (CI_TRUSTED_ASSOCIATIONS).
 #
-# Caller (identical in every repo, .github/workflows/catalog-core-dispatch.yaml):
+# Caller, identical in every repo (.github/workflows/catalog-core-dispatch.yaml):
 #
 #   on:
 #     pull_request_target:
@@ -30,13 +31,13 @@ permissions: {}
 
 jobs:
   dispatch:
-    # A PR event (not a draft), or a `recheck` comment on a PR by a member or the PR's author.
+    # A PR event (not a draft, not an edit of the title only), or a `recheck` comment on a PR.
     if: >-
-      (github.event_name == 'pull_request_target' && !github.event.pull_request.draft) ||
+      (github.event_name == 'pull_request_target' && !github.event.pull_request.draft &&
+       (github.event.action != 'edited' || github.event.changes.body != null ||
+        github.event.changes.base != null)) ||
       (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
-       github.event.comment.body == 'recheck' &&
-       (contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
-        github.event.comment.user.login == github.event.issue.user.login))
+       github.event.comment.body == 'recheck')
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -49,7 +50,7 @@ jobs:
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: catalog-core
-          permission-contents: write
+          permission-contents: write   # what repository_dispatch requires
 
       - name: Notify catalog-core
         env:
@@ -57,7 +58,10 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          COMMENT: ${{ github.event.comment.id || '' }}
+        # A recheck re-tests this PR only; a change also re-tests the PRs that depend on it.
         run: |
           gh api --method POST "/repos/${OWNER}/catalog-core/dispatches" \
-            -f event_type=catalog_pr -f "client_payload[repo]=${REPO}" -f "client_payload[number]=${NUMBER}"
+            -f event_type=catalog_pr -f "client_payload[repo]=${REPO}" -f "client_payload[number]=${NUMBER}" \
+            -f "client_payload[comment]=${COMMENT}" -f "client_payload[cascade]=$([ -n "$COMMENT" ] && echo false || echo true)"
           echo "Sent catalog_pr for ${REPO}#${NUMBER} to ${OWNER}/catalog-core"

@@ -72,8 +72,8 @@ def test_build_failure_blocks_the_run_and_names_the_error(app):
     write(f"{app.dir}/.scripts/build/qemu.x86_64", BUILD_ERROR)
     a = app("qemu.x86_64")
     assert (a.build, a.run) == ("FAIL", "BLOCKED")
-    assert a.reason == "unikraft/lib/x.c: boom"
-    assert a.errors == ["build:unikraft/lib/x.c: boom"] and not a.fetch_error
+    assert a.reason == "unikraft/lib/x.c:12:3: error: boom"
+    assert not a.fetch_error
 
 
 def test_run_failure_names_the_wrapper_message(app):
@@ -95,44 +95,62 @@ def test_build_only_variant(app):
 def test_timeout(app):
     write(f"{app.dir}/.scripts/run/qemu.x86_64", HANG)
     a = app("qemu.x86_64", timeout=2)
-    assert (a.build, a.run, a.reason) == ("PASS", "TIMEOUT", "run timed out")
+    assert (a.build, a.run, a.reason) == ("PASS", "TIMEOUT", "run timed out after 2s")
 
 
 @pytest.mark.parametrize(
-    ("line", "reason"),
+    ("lines", "reason"),
     [
         (
-            "/w/nginx/workdir/build/libmusl/origin/musl-1.2.3//src/a.c:151:52: error: pointer type mismatch",
-            "musl-1.2.3/src/a.c: pointer type mismatch",
+            ["/w/nginx/workdir/build/libmusl/origin/musl-1.2.3//src/a.c:151:52: error: pointer type mismatch"],
+            "musl-1.2.3/src/a.c:151:52: error: pointer type mismatch",
         ),
-        ('/w/repos/libs/libelf/elf.c:1:2: error: #error "boom"', 'libs/libelf/elf.c: "boom"'),  # gcc
-        ('/w/repos/libs/libelf/elf.c:1:2: error: "boom"', 'libs/libelf/elf.c: "boom"'),  # clang
+        (
+            ["  CC x.o", "/bin/sh: 1: aarch64-linux-gnu-gcc: command not found"],
+            "/bin/sh: 1: aarch64-linux-gnu-gcc: command not found",
+        ),
+        (["make[2]: *** [x] Error 1"], "make[2]: *** [x] Error 1"),
+        (["only noise", "last line"], "last line"),
     ],
 )
-def test_failure_reason(tmp_path, line, reason):
+def test_build_failure_reason(tmp_path, lines, reason):
     log = tmp_path / "build.x"
-    log.write_text(f"noise\n{line}\nmake: *** [all] Error 2\n")
-    assert run.failure_reason(str(log), "build", "/w")[0] == reason
+    log.write_text("\n".join(["noise", *lines, ""]))
+    assert run.failure_reason(str(log), "build", "/w") == (reason, False)
 
 
-def test_errors_ignore_line_numbers(tmp_path):
-    a, b = tmp_path / "a", tmp_path / "b"
-    a.write_text("/w/repos/x.c:10:2: error: boom\n")
-    b.write_text("/w/repos/x.c:99:7: error: boom\n")
-    assert run.failure_reason(str(a), "build", "/w")[1] == run.failure_reason(str(b), "build", "/w")[1]
-
-
-def test_interleaved_parallel_output_is_cut(tmp_path):
-    # Seen on lib-musl#20: make -j glued the next compiler's output onto the message.
+@pytest.mark.parametrize(
+    ("line", "fetch"),
+    [
+        ("wget: unable to resolve host address 'musl.libc.org'", True),
+        ("Connecting to x|1.2.3.4|:443... failed: Connection timed out.", True),
+        (
+            "awaiting response... 503 Service Unavailable\n2026-01-01 ERROR 503: Service Unavailable.",
+            True,
+        ),
+        ("ERROR 404: Not Found.", False),  # not transient: the URL is wrong
+        ("x.c:1:2: error: boom", False),
+    ],
+)
+def test_download_failures_are_recognized_in_build_logs(tmp_path, line, fetch):
     log = tmp_path / "build.x"
+    log.write_text(f"{line}\nmake: *** [fetch] Error 4\n")
+    assert run.failure_reason(str(log), "build", "/w")[1] is fetch
+
+
+def test_run_logs_never_count_as_download_failures(tmp_path):
+    # An app that serves HTTP and doesn't answer: the app's fault, not the network's.
+    log = tmp_path / "run.x"
     log.write_text(
-        "/w/repos/unikraft/plat/a.c:3:4: error: instruction requires: fp-armv8In file included from x.h:1\n"
-        "/w/repos/unikraft/plat/b.c:9:1: error: other\n/w/repos/unikraft/plat/a.c:3:4: error: dup\n"
+        "curl: (7) Failed to connect to 172.44.0.2 port 8080: Connection refused\nCannot connect to 172.44.0.2:8080\n"
     )
-    reason, errors, _ = run.failure_reason(str(log), "build", "/w")
-    assert reason == "unikraft/plat/a.c: instruction requires: fp-armv8"
-    assert errors == [
-        "build:unikraft/plat/a.c: instruction requires: fp-armv8",
-        "build:unikraft/plat/b.c: other",
-        "build:unikraft/plat/a.c: dup",
-    ]
+    assert run.failure_reason(str(log), "run", "/w") == ("Cannot connect to 172.44.0.2:8080", False)
+
+
+def test_retry_policy():
+    from ukci.models import Attempt
+
+    assert run.needs_retry(Attempt(variant="v", attempt="first", build="PASS", run="FAIL"))
+    assert run.needs_retry(Attempt(variant="v", attempt="first", build="FAIL", run="BLOCKED", fetch_error=True))
+    assert not run.needs_retry(Attempt(variant="v", attempt="first", build="FAIL", run="BLOCKED"))
+    assert not run.needs_retry(Attempt(variant="v", attempt="first", build="PASS", run="PASS"))

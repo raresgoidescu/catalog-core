@@ -111,17 +111,6 @@ def test_cycle_resolves_the_same_from_both_sides():
     )
     a, b = run(gh, "unikraft/unikraft#1"), run(gh, "unikraft/lib-musl#12")
     assert a.errors == b.errors == [] and used(a) == used(b)
-    assert a.cycle() == b.cycle() == ["unikraft/lib-musl#12", "unikraft/unikraft#1"]
-
-
-def test_cycle_only_contains_prs_that_depend_both_ways():
-    gh = FakeGitHub(
-        pr("unikraft/unikraft#1", body="Depends-On: lib-musl#12, lib-lwip#40"),
-        pr("unikraft/lib-musl#12", body="Depends-On: unikraft#1"),
-        pr("unikraft/lib-lwip#40"),
-    )
-    assert run(gh).cycle() == ["unikraft/lib-musl#12", "unikraft/unikraft#1"]
-    assert run(gh, "unikraft/lib-lwip#40").cycle() == ["unikraft/lib-lwip#40"]
 
 
 def test_diamond_fetches_each_pr_once():
@@ -192,7 +181,7 @@ def test_stack_plus_an_independent_pr():
         ),
         ([pr("unikraft/unikraft#1", body="Depends-On: lib-musl#404")], "no such pull request"),
         ([pr("unikraft/unikraft#1", mergeable=False)], "can't be merged into `staging` (merge conflict)"),
-        ([pr("unikraft/unikraft#1", mergeable=None)], "re-run in a minute"),
+        ([pr("unikraft/unikraft#1", mergeable=None)], "comment `recheck` in a minute"),
         ([pr("unikraft/unikraft#1", base="feature-x")], "only PRs to stable, staging are tested"),
         (
             [
