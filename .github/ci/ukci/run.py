@@ -5,6 +5,7 @@ import platform
 import re
 import shutil
 import subprocess
+import threading
 import time
 
 from . import apps, data, git
@@ -99,7 +100,14 @@ def failure_reason(log_path: str, phase: str, root: str) -> tuple[str, bool, boo
 
 
 def run_variant(
-    app_dir: str, variant: apps.Variant, compiler: str, kind: Kind, timeout_s: int, sudo: bool, root: str
+    app_dir: str,
+    variant: apps.Variant,
+    compiler: str,
+    kind: Kind,
+    timeout_s: int,
+    run_timeout_s: int,
+    sudo: bool,
+    root: str,
 ) -> Attempt:
     env = [f"{k}={v}" for k, v in COMPILERS[compiler].items()]
     cmd = ["timeout", "-k", "10", str(timeout_s), "env", *env, variant_script(app_dir, variant.name)]
@@ -108,9 +116,16 @@ def run_variant(
     attempt = Attempt(variant=variant.name, attempt=kind, build="MISSING", run="MISSING" if variant.run else None)
     start = time.monotonic()
     last = start
+    run_expired = threading.Event()
+    watchdog = None
     with subprocess.Popen(
         cmd, cwd=app_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
     ) as proc:
+
+        def stop_run() -> None:
+            run_expired.set()
+            proc.terminate()
+
         assert proc.stdout
         for line in proc.stdout:
             print(line, end="", flush=True)
@@ -122,12 +137,17 @@ def run_variant(
             if m.group(1) == "build":
                 attempt.build = status
                 attempt.build_s = round(now - last, 1)
+                if variant.run:
+                    watchdog = threading.Timer(run_timeout_s, stop_run)
+                    watchdog.start()
             else:
                 attempt.run = status
                 attempt.run_s = round(now - last, 1)
             last = now
         returncode = proc.wait()
-    if returncode in (124, 137):
+    if watchdog is not None:
+        watchdog.cancel()
+    if returncode in (124, 137) or run_expired.is_set():
         elapsed = round(time.monotonic() - last, 1)
         if attempt.build == "MISSING":
             attempt.build = "TIMEOUT"
@@ -145,7 +165,8 @@ def run_variant(
         return attempt
     status_of_phase = attempt.build if attempt.phase == "build" else attempt.run
     if status_of_phase == "TIMEOUT":
-        attempt.reason = f"{attempt.phase} timed out after {timeout_s}s"
+        limit = run_timeout_s if run_expired.is_set() else timeout_s
+        attempt.reason = f"{attempt.phase} timed out after {limit}s"
         return attempt
     log = os.path.join(app_dir, ".scripts/test/log", f"{attempt.phase}.{variant.name}")
     attempt.reason, attempt.fetch_error, attempt.env_error = failure_reason(log, attempt.phase, root)
@@ -209,7 +230,9 @@ class Runner:
         for variant in variants:
             print(f"::group::{kind}: {self.args.app} {variant.name} ({self.args.compiler})", flush=True)
             sudo = not self.args.no_sudo
-            a = run_variant(in_dir, variant, self.args.compiler, kind, self.args.timeout, sudo, self.root)
+            a = run_variant(
+                in_dir, variant, self.args.compiler, kind, self.args.timeout, self.args.run_timeout, sudo, self.root
+            )
             print("::endgroup::", flush=True)
             for phase in ("build", "run"):
                 src = os.path.join(in_dir, ".scripts/test/log", f"{phase}.{variant.name}")
@@ -280,7 +303,9 @@ class Runner:
         try:
             checkout(self.plan.base_lock, changed, self.repos_dir)
             app_dir, failed = self.base_dir(failed)
-            self.attempt("base", failed, app_dir)
+            base = self.attempt("base", failed, app_dir)
+            again = [v for v in failed if final[v.name].phase == "run" and needs_retry(base[v.name])]
+            self.attempt("base_retry", again, app_dir)
         except (subprocess.CalledProcessError, RuntimeError) as e:
             self.result.infra_error = f"checkout without the PRs failed: {getattr(e, 'stderr', '') or e}"[:400]
         self.save()

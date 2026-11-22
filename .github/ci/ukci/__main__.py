@@ -40,6 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-recheck", action="store_true")
     p.add_argument("--no-sudo", action="store_true")
     p.add_argument("--timeout", type=int, default=1200)
+    p.add_argument("--run-timeout", type=int, default=300)
     p.set_defaults(func=run.main)
 
     p = sub.add_parser("report")

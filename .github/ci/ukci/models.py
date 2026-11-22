@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Status = Literal["PASS", "FAIL", "TIMEOUT", "BLOCKED", "MISSING"]
 Phase = Literal["build", "run"]
-Kind = Literal["first", "retry", "base"]
+Kind = Literal["first", "retry", "base", "base_retry"]
 VerdictName = Literal["PASS", "FLAKY", "BROKEN_ON_BASE", "REGRESSION", "FAIL", "INFRA"]
 
 

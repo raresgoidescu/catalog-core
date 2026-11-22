@@ -14,6 +14,7 @@ from .models import Plan, Report, Result
 from .plan import Settings, schedule_channel
 
 CHECK = "Catalog Core"
+WORKFLOW = "catalog-test.yml"
 
 
 class TamperedPlan(Exception):
@@ -116,10 +117,11 @@ def cmd_fan_out(args) -> int:
         return 1
     gh = GitHub()
     here = os.environ["GITHUB_REPOSITORY"]
+    branch = os.environ["GITHUB_REF_NAME"]
     for ref in store.dependents(plan.root):
         repo, _, number = ref.partition("#")
         print(f"{plan.root} changed: re-testing {ref}, which was tested together with it")
-        gh.dispatch(here, "catalog_pr", {"repo": repo, "number": number, "cascade": "false"})
+        gh.run_workflow(here, WORKFLOW, branch, {"repo": repo, "number": number, "cascade": "false"})
     return 0
 
 

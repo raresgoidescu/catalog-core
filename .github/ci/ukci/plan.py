@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from . import apps, data, git
 from .github import GitHub
 from .models import CatalogRef, Cell, LockEntry, Part, Plan, PlannedPR, PullRequest, Reused
-from .resolve import CATALOG, Found, Resolution, path_of, resolve
+from .resolve import CATALOG, Found, Resolution, resolve
 from .run import COMPILERS
 
 SLUG_RE = re.compile(r"^[\w.-]+/[\w.-]+$")
@@ -59,20 +59,20 @@ class BadEvent(ValueError):
 def trigger(event_name: str, event: dict, repository: str) -> Trigger:
     if event_name == "pull_request":
         return Trigger(f"{repository.lower()}#{event['number']}")
-    if event_name != "repository_dispatch":
+    if event_name != "workflow_dispatch":
         return Trigger(None)
-    if event.get("action") != "catalog_pr":
-        raise BadEvent(f"unexpected dispatch type {event.get('action')!r}")
-    payload = event.get("client_payload") or {}
-    repo = payload.get("repo")
-    number = str(payload.get("number", ""))
-    comment = str(payload.get("comment", ""))
-    if not isinstance(repo, str) or not SLUG_RE.match(repo) or not number.isdigit():
-        raise BadEvent(f"invalid dispatch payload: repo={repo!r} number={number!r}")
+    inputs = event.get("inputs") or {}
+    repo = str(inputs.get("repo") or "")
+    number = str(inputs.get("number") or "")
+    comment = str(inputs.get("comment") or "")
+    if not repo and not number:
+        return Trigger(None)
+    if not SLUG_RE.match(repo) or not number.isdigit():
+        raise BadEvent(f"invalid inputs: repo={repo!r} number={number!r}")
     if comment and not comment.isdigit():
-        raise BadEvent(f"invalid dispatch payload: comment={comment!r}")
+        raise BadEvent(f"invalid inputs: comment={comment!r}")
     comment_id = int(comment) if comment else None
-    fan_out = str(payload.get("cascade", "true")).lower() != "false"
+    fan_out = str(inputs.get("cascade") or "true").lower() != "false"
     return Trigger(f"{repo.lower()}#{number}", comment_id, fan_out)
 
 
@@ -182,8 +182,9 @@ class Planner:
         p.trusted = res.trusted
         p.root_repo = root_pr.repo
         p.root_head_sha = root_pr.head_sha
-        if path_of(root_pr.repo) != CATALOG:
-            p.channel = root_pr.base_ref
+        if res.channel:
+            p.channel = res.channel
+        p.notes += res.notes
         used = set()
         for group in res.used.values():
             for found in group:
@@ -212,7 +213,7 @@ class Planner:
         comment = self.gh.comment(pr.repo, comment_id)
         if comment is None or not str(comment.get("issue_url", "")).endswith(f"/issues/{pr.number}"):
             return f"comment {comment_id} is not on {pr.ref}"
-        if (comment.get("body") or "").strip() != "recheck":
+        if (comment.get("body") or "").strip().lower() != "recheck":
             return f"comment {comment_id} is not a `recheck`"
         login = (comment.get("user") or {}).get("login", "")
         if comment.get("author_association") in self.settings.trusted_associations or login == pr.author:
