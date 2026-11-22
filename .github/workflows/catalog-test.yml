@@ -21,7 +21,8 @@ on:
   pull_request:
     paths-ignore: ['**.md']
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * *'     # staging, nightly
+    - cron: '0 3 * * 0'     # stable, weekly (CI_STABLE_SCHEDULE below)
   workflow_dispatch:
     inputs:
       channel:
@@ -48,6 +49,8 @@ concurrency:
 
 env:
   PYTHONPATH: .github/ci
+  # Scheduled runs test staging, except the one with this cron, which tests stable.
+  CI_STABLE_SCHEDULE: '0 3 * * 0'
 
 jobs:
   plan:

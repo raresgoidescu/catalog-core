@@ -208,9 +208,12 @@ def main(args) -> int:
         plan = planner._finish({"version": 1, "root": None, "errors": [str(e)], "prs": [], "trusted": False,
                                 "channel": "staging"}, [], {}, {}, None)
     else:
+        channel = inputs.get("channel") or None
+        if event_name == "schedule":
+            channel = "stable" if event.get("schedule") == env("CI_STABLE_SCHEDULE", "") else "staging"
         plan = planner.plan(
             root=root,
-            channel=inputs.get("channel") or None,
+            channel=channel,
             only_apps=[a for a in (inputs.get("apps") or "").replace(" ", "").split(",") if a],
             compilers=[c for c in (inputs.get("compilers") or ",".join(env_list("CI_COMPILERS", "gcc,clang"))).split(",") if c],
             trusted_associations=set(env_list("CI_TRUSTED_ASSOCIATIONS", "OWNER,MEMBER,COLLABORATOR")),
