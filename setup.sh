@@ -1,19 +1,39 @@
 #!/bin/sh
+#
+# Clone every repository the apps in this directory need into repos/.
+#
+# The list is not maintained here: it is every path the apps link in their
+# own setup.sh (check_exists_and_create_symlink "<path>"). GitHub names
+# follow the convention
+#     unikraft    -> unikraft/unikraft
+#     libs/<x>    -> unikraft/lib-<x>
+#     apps/<x>    -> unikraft/app-<x>
+#
+# Usage: ./setup.sh [branch]      clone missing repos (default: staging)
+#        ./setup.sh --list        print "<path> <github repo>" and exit
 
 BRANCH="${1:-${BRANCH:-staging}}"
+ORG="${ORG:-unikraft}"
 
-test -d repos/unikraft || git clone -b "$BRANCH" https://github.com/unikraft/unikraft repos/unikraft
-test -d repos/libs/musl || git clone -b "$BRANCH" https://github.com/unikraft/lib-musl repos/libs/musl
-test -d repos/libs/lwip || git clone -b "$BRANCH" https://github.com/unikraft/lib-lwip repos/libs/lwip
-test -d repos/libs/libcxx || git clone -b "$BRANCH" https://github.com/unikraft/lib-libcxx repos/libs/libcxx
-test -d repos/libs/libcxxabi || git clone -b "$BRANCH" https://github.com/unikraft/lib-libcxxabi repos/libs/libcxxabi
-test -d repos/libs/libunwind || git clone -b "$BRANCH" https://github.com/unikraft/lib-libunwind repos/libs/libunwind
-test -d repos/libs/compiler-rt || git clone -b "$BRANCH" https://github.com/unikraft/lib-compiler-rt repos/libs/compiler-rt
-test -d repos/libs/nginx || git clone -b "$BRANCH" https://github.com/unikraft/lib-nginx repos/libs/nginx
-test -d repos/libs/python3 || git clone -b "$BRANCH" https://github.com/unikraft/lib-python3 repos/libs/python3
-test -d repos/libs/click || git clone -b "$BRANCH" https://github.com/unikraft/lib-click.git repos/libs/click
-test -d repos/libs/libelf || git clone -b "$BRANCH" https://github.com/unikraft/lib-libelf repos/libs/libelf
-test -d repos/apps/elfloader || git clone -b "$BRANCH" https://github.com/unikraft/app-elfloader repos/apps/elfloader
-test -d repos/libs/redis || git clone -b "$BRANCH" https://github.com/unikraft/lib-redis repos/libs/redis
-test -d repos/libs/wamr || git clone -b "$BRANCH" https://github.com/unikraft/lib-wamr repos/libs/wamr
-test -d repos/libs/sqlite || git clone -b "$BRANCH" https://github.com/unikraft/lib-sqlite repos/libs/sqlite
+cd "$(dirname "$0")" || exit 1
+
+repo_name()
+{
+    case "$1" in
+    unikraft) echo unikraft ;;
+    libs/*)   echo "lib-${1#libs/}" ;;
+    apps/*)   echo "app-${1#apps/}" ;;
+    *)        echo "Unknown repository path '$1'" 1>&2; return 1 ;;
+    esac
+}
+
+paths=$(sed -n 's/^[[:space:]]*check_exists_and_create_symlink[[:space:]]*"\([^"]*\)"[[:space:]]*$/\1/p' */setup.sh | sort -u)
+
+for path in $paths; do
+    name=$(repo_name "$path") || exit 1
+    if test "$BRANCH" = "--list"; then
+        echo "$path $ORG/$name"
+        continue
+    fi
+    test -d "repos/$path" || git clone -b "$BRANCH" "https://github.com/$ORG/$name" "repos/$path" || exit 1
+done

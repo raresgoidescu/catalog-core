@@ -115,13 +115,26 @@ jobs:
         env:
           APPS_OVERRIDE: ${{ inputs.apps_override }}
           MODE: ${{ inputs.mode }}
+          PYTHONPATH: .github/ci
         run: |
+          # Apps are discovered from their directories: an app is tested when
+          # its setup.sh links the repository under test (unikraft = all).
+          case "$MODE" in
+            all)       changed=unikraft ;;
+            elfloader) changed=apps/elfloader ;;
+            *)         changed="libs/$MODE" ;;
+          esac
           if [ -n "$APPS_OVERRIDE" ]; then
             apps="$APPS_OVERRIDE"
-            echo "Using apps_override, skipping list-apps.sh: $apps"
+            echo "Using apps_override: $apps"
           else
-            apps=$(bash .github/scripts/tests/list-apps.sh "$MODE")
+            apps=$(python3 -m ukci apps --names --affected "$changed")
           fi
+          if [ "$apps" = "[]" ]; then
+            echo "::error::No app with tests links '$changed'"
+            exit 1
+          fi
+          echo "Apps linking '$changed': $apps"
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
 
       - name: Setup repositories
