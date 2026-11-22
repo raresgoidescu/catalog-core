@@ -34,3 +34,6 @@ if ! test -d workdir/apps; then
 fi
 
 check_exists_and_create_symlink "unikraft"
+# The kernel is built by ../elfloader-basic, which needs these too.
+check_exists_and_create_symlink "libs/libelf"
+check_exists_and_create_symlink "apps/elfloader"
