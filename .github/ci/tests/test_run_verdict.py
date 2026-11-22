@@ -124,7 +124,7 @@ class VerdictTest(unittest.TestCase):
             attempt("qemu.x86_64", "base")]}])
         self.assertEqual(V.conclusion(self.plan, vs), "failure")
         self.assertTrue(title(self.plan, vs).startswith("❌ 1 regression"))
-        self.assertIn("| ❌ regression | nginx | gcc | qemu.x86_64 | run failed with the PRs; passes on staging |",
+        self.assertIn("| ❌ regression | nginx | gcc | qemu.x86_64 | run failed with the PRs; passes on staging without them |",
                       render(self.plan, vs))
         only_broken = [v for v in vs if v.variant != "qemu.x86_64"]
         self.assertEqual({v.verdict for v in only_broken}, {V.INFRA})

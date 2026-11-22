@@ -97,6 +97,10 @@ class Planner:
         catalog_sha = catalog_pr.pr.merge_sha if catalog_pr else self.sha
         plan["catalog"] = {"repo": catalog_repo, "sha": catalog_sha,
                            "from": f"{catalog_pr.pr.ref} merged into {catalog_pr.pr.base_ref}" if catalog_pr else "this workflow's commit"}
+        if catalog_pr:
+            # Without the catalog-core PR: the commit its test merge was made onto.
+            plan["catalog_base"] = {"repo": catalog_repo, "sha": self.merge_base_of(catalog_repo, catalog_sha),
+                                    "from": catalog_pr.pr.base_ref}
         root_dir = catalog_root or "."
         tmp = None
         if catalog_pr:

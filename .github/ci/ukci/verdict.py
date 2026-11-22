@@ -48,7 +48,15 @@ def _describe(a: dict) -> str:
     return {"TIMEOUT": f"{phase} timed out", "MISSING": f"{phase} produced no result"}.get(status, f"{phase} failed")
 
 
+def base_label(plan: dict) -> str:
+    label = plan.get("channel", "base")
+    if plan.get("catalog_base"):
+        label += f" and catalog-core {plan['catalog_base'].get('from', 'base')}"
+    return label
+
+
 def judge(plan: dict, results: list[dict]) -> list[Verdict]:
+    where = base_label(plan)
     by_cell = {(r["app"], r["compiler"]): r for r in results}
     out: list[Verdict] = []
     for cell in plan["cells"]:
@@ -74,10 +82,10 @@ def judge(plan: dict, results: list[dict]) -> list[Verdict]:
             elif base:
                 if _failed_phase(base) is None:
                     out.append(Verdict(app, cc, v, REGRESSION, phase,
-                                       f"{_describe(first)} with the PRs; passes on {plan.get('channel', 'base')}"))
+                                       f"{_describe(first)} with the PRs; passes on {where} without them"))
                 else:
                     out.append(Verdict(app, cc, v, BROKEN_ON_BASE, phase,
-                                       f"{_describe(first)}; also fails on {plan.get('channel', 'base')} without the PRs"))
+                                       f"{_describe(first)}; also fails on {where} without the PRs"))
             else:
                 out.append(Verdict(app, cc, v, FAIL, phase, _describe(first)))
     return out

@@ -177,14 +177,14 @@ def main(args) -> int:
         write()
         return 2
 
-    def attempt(kind: str, vs: list[apps_mod.Variant]) -> list[dict]:
+    def attempt(kind: str, vs: list[apps_mod.Variant], in_dir: str = app_dir) -> list[dict]:
         rs = []
         for v in vs:
             print(f"::group::{kind}: {args.app} {v.name} ({args.compiler})", flush=True)
-            r = run_variant(app_dir, v, args.compiler, timeout_s, sudo)
+            r = run_variant(in_dir, v, args.compiler, timeout_s, sudo)
             print("::endgroup::", flush=True)
             r["attempt"] = kind
-            save_logs(app_dir, out, kind, v.name)
+            save_logs(in_dir, out, kind, v.name)
             result["attempts"].append(r)
             write()
             rs.append(r)
@@ -198,14 +198,26 @@ def main(args) -> int:
     if run_failed and not args.no_recheck:
         attempt("retry", run_failed)
 
-    # Same variants on the base branch, if the PRs change anything this app uses.
-    differs = any(plan["base_lock"][p]["sha"] != plan["lock"][p]["sha"] for p in app.repos)
-    if bad and differs and not args.no_recheck:
+    # Same variants without the PRs: dependency repos at base_lock and, for a
+    # catalog-core PR, the app as it is on catalog-core's base branch.
+    changed_repos = [p for p in app.repos if plan["base_lock"][p]["sha"] != plan["lock"][p]["sha"]]
+    catalog_base = plan.get("catalog_base")
+    if bad and (changed_repos or catalog_base) and not args.no_recheck:
         try:
-            checkout(plan["base_lock"], [p for p in app.repos if plan["base_lock"][p]["sha"] != plan["lock"][p]["sha"]],
-                     repos_dir)
-            attempt("base", bad)
-        except subprocess.CalledProcessError as e:
+            checkout(plan["base_lock"], changed_repos, repos_dir)
+            base_dir, base_bad = app_dir, bad
+            if catalog_base:
+                bdir = os.path.join(root, ".ci-base-catalog")
+                if os.path.isdir(bdir):
+                    shutil.rmtree(bdir)
+                fetch_commit(f"https://github.com/{catalog_base['repo']}", catalog_base["sha"], bdir)
+                os.symlink(repos_dir, os.path.join(bdir, "repos"))
+                base_dir = os.path.join(bdir, args.app)
+                names = {v.name for v in bad}
+                base_bad = ([v for v in apps_mod.load_app(bdir, args.app).variants if v.name in names]
+                            if os.path.isfile(os.path.join(base_dir, apps_mod.TEST_SCRIPT)) else [])
+            attempt("base", base_bad, base_dir)    # a variant new in this PR has no base: stays FAIL
+        except (subprocess.CalledProcessError, RuntimeError) as e:
             result["infra_error"] = f"base checkout failed: {e}"
     write()
     return 0
