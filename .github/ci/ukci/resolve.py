@@ -12,9 +12,9 @@ are not dependencies.
 
 The dependency graph is only used to *find* PRs. The result is one
 commit per repository, so cycles (A <-> B), diamonds and chains all
-collapse to the same answer and no merge order is needed. CI never
-merges PRs together: several PRs in the same repo must be stacked (each
-one built on the previous one) and the top one is used.
+collapse to the same answer. Several PRs in the same repo are either a
+stack (the top one is used) or are merged together by the planner; if
+they conflict, the authors have to rebase one onto the other.
 
 Every problem is reported before any test runs, with the fix spelled out.
 """
@@ -61,6 +61,7 @@ class Resolution:
     errors: list[str] = field(default_factory=list)
     untrusted: list[str] = field(default_factory=list)
     root_state: str | None = None      # "open" | "merged" | "closed" | None (not fetched)
+    combine: dict[str, list[Found]] = field(default_factory=dict)  # repo path -> PRs to merge together
 
     @property
     def trusted(self) -> bool:
@@ -159,32 +160,29 @@ def resolve(gh, root: Ref, *, allowed_owners: set[str], trusted_associations: se
         open_prs.append(f)
     res.prs = open_prs
 
-    # 3. COLLAPSE to one PR per repo ----------------------------------------
+    # 3. COLLAPSE to one commit per repo ---------------------------------
     by_path: dict[str, list[Found]] = {}
     for f in open_prs:
         by_path.setdefault(path_of(f.pr.repo), []).append(f)
     for path, group in by_path.items():
-        if len(group) == 1:
-            res.selected[path] = group[0]
-            continue
-        # The top of a stack contains every other PR's head.
-        top = None
-        for cand in group:
-            if all(o is cand or gh.contains(cand.pr.repo, o.pr.head_sha, cand.pr.head_sha) for o in group):
-                top = cand
-                break
-        if top is None:
-            refs = " and ".join(f.pr.ref for f in group)
-            res.errors.append(f"{refs} are all required but are not stacked. CI does not merge PRs together: "
-                              "rebase one on top of the other (and mention the lower one in its Depends-On)")
-        else:
-            res.selected[path] = top
-            for o in group:
-                if o is not top:
-                    res.dropped.append((o.pr.ref, f"included in {top.pr.ref}, which is stacked on top of it"))
+        # A PR contained in another one (a stack) is covered by the top one.
+        tops = [c for c in group
+                if not any(o is not c and o.pr.head_sha != c.pr.head_sha
+                           and gh.contains(c.pr.repo, c.pr.head_sha, o.pr.head_sha) for o in group)]
+        for o in group:
+            if o not in tops:
+                top = next(t for t in tops if gh.contains(t.pr.repo, o.pr.head_sha, t.pr.head_sha))
+                res.dropped.append((o.pr.ref, f"included in {top.pr.ref}, which is stacked on top of it"))
+        tops.sort(key=lambda f: f.pr.number)
+        res.selected[path] = tops[0]
+        if len(tops) > 1:
+            # Not stacked: the planner merges them; a conflict is reported there.
+            res.combine[path] = tops
 
-    # 4. PIN: each selected PR must merge cleanly into its base --------------
-    for path, f in res.selected.items():
+    # 4. PIN: each PR used must merge cleanly into its base ------------------
+    used = [f for path, f in res.selected.items() if path not in res.combine]
+    used += [f for group in res.combine.values() for f in group]
+    for f in used:
         pr = f.pr
         if pr.mergeable is False:
             res.errors.append(f"{pr.ref} conflicts with `{pr.base_ref}`; please rebase it")

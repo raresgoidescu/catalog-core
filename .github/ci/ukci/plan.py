@@ -17,6 +17,7 @@ import subprocess
 import tempfile
 
 from . import apps as apps_mod
+from . import combine
 from . import repos
 from .gh import GitHub
 from .resolve import CATALOG, Ref, resolve
@@ -66,7 +67,7 @@ class Planner:
             plan["dropped"] = [{"pr": r, "reason": why} for r, why in res.dropped]
             plan["untrusted"] = res.untrusted
             plan["trusted"] = res.trusted
-            selected_ids = {id(f) for f in res.selected.values()}
+            selected_ids = {id(f) for f in res.selected.values()} | {id(f) for g in res.combine.values() for f in g}
             plan["prs"] = [{"pr": f.pr.ref, "url": f.pr.url, "title": f.pr.title, "head_sha": f.pr.head_sha,
                             "merge_sha": f.pr.merge_sha, "base_ref": f.pr.base_ref, "via": f.via,
                             "used": id(f) in selected_ids}
@@ -130,7 +131,12 @@ class Planner:
         lock, base_lock = {}, {}
         for path in sorted({p for a in selected for p in a.repos}):
             f = res.selected.get(path) if res else None
-            if f:
+            if res and path in res.combine:
+                entry = self.combined_entry(res.combine[path], channel, plan["errors"])
+                if entry:
+                    lock[path] = entry
+                    base_lock[path] = {"repo": entry["repo"], "sha": entry["combine"]["base_sha"], "from": channel}
+            elif f:
                 lock[path] = {"repo": f.pr.repo, "sha": f.pr.merge_sha, "pr": f.pr.ref,
                               "from": f"{f.pr.ref} merged into {f.pr.base_ref}"}
                 base_lock[path] = {"repo": f.pr.repo, "sha": self.merge_base_of(f.pr.repo, f.pr.merge_sha),
@@ -141,10 +147,30 @@ class Planner:
                 lock[path] = entry
                 base_lock[path] = dict(entry)
 
+        if plan["errors"]:
+            return self._finish(plan, [], {}, {}, None)
         cells = [{"app": a.name, "compiler": c, "why": why[a.name],
                   "repos": a.repos, "variants": [v.name for v in a.variants]}
                  for a in selected for c in compilers]
         return self._finish(plan, cells, lock, base_lock, catalog_sha)
+
+    def combined_entry(self, group, channel: str, errors: list[str]) -> dict | None:
+        """Merge non-stacked PRs of one repo onto the base branch head."""
+        repo = group[0].pr.repo
+        base_sha = self.branch_sha(repo, channel)
+        parts = [combine.Part(f.pr.ref, f.pr.head_sha) for f in group]
+        labels = " + ".join(p.label for p in parts)
+        try:
+            with tempfile.TemporaryDirectory(prefix="combine-") as tmp:
+                sha = combine.build(f"https://github.com/{repo}", base_sha, parts, tmp)
+        except combine.Conflict as e:
+            errors.append(f"{labels} are all required but {e.second} conflicts with {e.first} "
+                          f"(in {', '.join(e.files[:5]) or 'some files'}). CI can't resolve that: rebase "
+                          f"{e.second} on top of the other PR(s) and add a Depends-On between them")
+            return None
+        return {"repo": repo, "sha": sha, "pr": labels,
+                "from": f"{labels} merged together into {channel}",
+                "combine": {"base_sha": base_sha, "parts": [{"label": p.label, "sha": p.sha} for p in parts]}}
 
     def catalog_changed_apps(self, pr, found) -> set[str] | None:
         """App names a catalog-core PR touches; None if it touches shared files."""

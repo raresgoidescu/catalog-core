@@ -24,8 +24,10 @@ lines starting with `Depends-On:` count. Words like "needs" or "requires"
 are ignored. Dependencies are followed transitively, and PRs that depend on
 each other (A ↔ B) are fine.
 
-- Several PRs **in the same repo** must be **stacked**: each one built on
-  the previous one. CI uses the top one and does not merge PRs together.
+- Several PRs **in the same repo** are fine. If they are stacked (each
+  built on the previous one), CI uses the top one. Otherwise CI merges them
+  together onto the target branch. If they conflict, CI can't resolve that:
+  the check names the PRs and files, and you rebase one onto the other.
 - All PRs must target the same branch (`staging` or `stable`).
 - Already-merged dependencies are skipped. Closed ones are an error.
 - Each PR is tested as GitHub's merge of it into its target branch. If it

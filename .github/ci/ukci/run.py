@@ -25,6 +25,7 @@ import subprocess
 import time
 
 from . import apps as apps_mod
+from . import combine
 from .plan import fetch_commit
 
 LINE_RE = re.compile(r"^\s*(build|run)\.(\S+)\s+\.\.\.\s+(PASSED|FAILED)\s*$")
@@ -39,7 +40,13 @@ def checkout(lock: dict, paths: list[str], dest: str) -> None:
         if os.path.isdir(target):
             shutil.rmtree(target)
         print(f"::group::{path}: {entry['repo']}@{entry['sha'][:12]} ({entry['from']})", flush=True)
-        fetch_commit(f"https://github.com/{entry['repo']}", entry["sha"], target)
+        url = f"https://github.com/{entry['repo']}"
+        if "combine" in entry:
+            c = entry["combine"]
+            combine.checkout(url, c["base_sha"], [combine.Part(x["label"], x["sha"]) for x in c["parts"]],
+                             entry["sha"], target)
+        else:
+            fetch_commit(url, entry["sha"], target)
         print("::endgroup::", flush=True)
 
 
@@ -165,7 +172,7 @@ def main(args) -> int:
     repos_dir = os.path.join(root, "repos")
     try:
         checkout(plan["lock"], app.repos, repos_dir)
-    except subprocess.CalledProcessError as e:
+    except (subprocess.CalledProcessError, RuntimeError) as e:
         result["infra_error"] = f"checkout failed: {e}"
         write()
         return 2

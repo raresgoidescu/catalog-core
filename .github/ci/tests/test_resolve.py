@@ -115,12 +115,24 @@ class ResolveTest(unittest.TestCase):
                       res.dropped)
 
     # 7
-    def test_unstacked_prs_in_one_repo_are_refused(self):
-        res = run(FakeGitHub(pr("unikraft/unikraft", 1, body="Depends-On: lib-musl#12, lib-musl#15"),
+    def test_unstacked_prs_in_one_repo_are_combined(self):
+        res = run(FakeGitHub(pr("unikraft/unikraft", 1, body="Depends-On: lib-musl#15, lib-musl#12"),
                              pr("unikraft/lib-musl", 12), pr("unikraft/lib-musl", 15)))
-        self.assertEqual(len(res.errors), 1)
-        self.assertIn("are not stacked", res.errors[0])
-        self.assertIn("rebase", res.errors[0])
+        self.assertEqual(res.errors, [])
+        self.assertEqual([f.pr.number for f in res.combine["libs/musl"]], [12, 15])
+
+    def test_stack_plus_independent_pr(self):
+        gh = FakeGitHub(pr("unikraft/unikraft", 1, body="Depends-On: lib-musl#12, lib-musl#15, lib-musl#20"),
+                        pr("unikraft/lib-musl", 12, head="m12"), pr("unikraft/lib-musl", 15, head="m15"),
+                        pr("unikraft/lib-musl", 20, head="m20"), stacks={("m12", "m15")})
+        res = run(gh)
+        self.assertEqual([f.pr.number for f in res.combine["libs/musl"]], [15, 20])
+        self.assertEqual(res.dropped[0][0], "unikraft/lib-musl#12")
+
+    def test_combined_pr_that_conflicts_with_base(self):
+        res = run(FakeGitHub(pr("unikraft/unikraft", 1, body="Depends-On: lib-musl#12, lib-musl#15"),
+                             pr("unikraft/lib-musl", 12), pr("unikraft/lib-musl", 15, mergeable=False)))
+        self.assertIn("unikraft/lib-musl#15 conflicts with `staging`", res.errors[0])
 
     # 8
     def test_merged_dependency_is_dropped(self):
