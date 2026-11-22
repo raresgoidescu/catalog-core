@@ -7,8 +7,8 @@ from ukci.resolve import Ref, parse_depends_on, resolve
 def pr(repo, number, *, body="", commits=(), state="open", merged=False, base="staging",
        assoc="MEMBER", mergeable=True, head=None, author="dev"):
     head = head or f"{repo.split('/')[1]}-{number}-head"
-    return PR(repo=repo, number=number, state=state, merged=merged, draft=False, base_ref=base,
-              base_sha=f"{base}-sha", head_ref=f"b{number}", head_sha=head, head_repo=repo,
+    return PR(repo=repo, number=number, state=state, merged=merged, base_ref=base,
+              base_sha=f"{base}-sha", head_sha=head,
               mergeable=mergeable, merge_sha=(f"{head}-merge" if mergeable else None), author=author,
               author_association=assoc, body=body, commit_messages=[(f"c{i:012d}", m) for i, m in enumerate(commits)])
 

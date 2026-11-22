@@ -18,12 +18,9 @@ class PR:
     number: int
     state: str                # "open" | "closed"
     merged: bool
-    draft: bool
     base_ref: str             # e.g. "staging"
     base_sha: str
-    head_ref: str
     head_sha: str
-    head_repo: str            # may be a fork
     mergeable: bool | None    # None: GitHub hasn't computed it yet
     merge_sha: str | None     # test merge of head into base (when mergeable)
     author: str
@@ -99,12 +96,9 @@ class GitHub:
             number=d["number"],
             state=d["state"],
             merged=bool(d.get("merged")),
-            draft=bool(d.get("draft")),
             base_ref=d["base"]["ref"],
             base_sha=d["base"]["sha"],
-            head_ref=d["head"]["ref"],
             head_sha=d["head"]["sha"],
-            head_repo=(d["head"].get("repo") or {}).get("full_name", ""),
             mergeable=d.get("mergeable"),
             merge_sha=d.get("merge_commit_sha") if d.get("mergeable") else None,
             author=d["user"]["login"],

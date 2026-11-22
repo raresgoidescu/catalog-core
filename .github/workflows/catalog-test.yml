@@ -157,25 +157,14 @@ jobs:
         with:
           name: plan
 
-      - name: Install dependencies
+      - name: Set up runner
         timeout-minutes: 20
-        run: bash .github/scripts/utils/retry.sh 10m 2 30s -- bash .github/scripts/setup/base-dependencies.sh
-
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-        timeout-minutes: 5
-
-      - name: Install Firecracker
-        timeout-minutes: 12
-        run: bash .github/scripts/utils/retry.sh 4m 3 30s -- bash .github/scripts/setup/firecracker-setup.sh
-
-      - name: Set up QEMU networking
-        run: bash .github/scripts/setup/qemu-setup.sh
+        run: .github/ci/setup-host.sh
 
       - name: Run ${{ matrix.app }} (${{ matrix.compiler }})
         env:
           APP: ${{ matrix.app }}
           COMPILER: ${{ matrix.compiler }}
-          DOCKER_BUILDKIT: '1'
         run: python3 -m ukci run --plan plan.json --app "$APP" --compiler "$COMPILER" --out results
 
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
