@@ -73,6 +73,34 @@ class BlameTest(unittest.TestCase):
         self.assertIn("not known yet", self.detail_with(None))
 
 
+class MemberChecksTest(unittest.TestCase):
+    class FakeGH:
+        token = "t"
+
+        def __init__(self):
+            self.calls = []
+
+        def get(self, path):
+            self.calls.append(("GET", path))
+            return {"check_runs": [{"id": 7}]} if "lib-musl" in path else {"check_runs": []}
+
+        def request(self, method, path, body):
+            self.calls.append((method, path))
+            return {"id": 1}
+
+    def test_updates_or_creates_on_every_other_cycle_member(self):
+        gh = self.FakeGH()
+        plan = {"root": "o/unikraft#1", "run_url": "u", "cycle": [
+            {"pr": "o/unikraft#1", "repo": "o/unikraft", "head_sha": "a"},
+            {"pr": "o/lib-musl#2", "repo": "o/lib-musl", "head_sha": "b"},
+            {"pr": "o/lib-lwip#3", "repo": "o/lib-lwip", "head_sha": "c"}]}
+        report.post_member_checks(gh, plan, status="completed", title_text="t", summary="s", conclusion="success")
+        self.assertIn(("GET", "/repos/o/lib-musl/commits/b/check-runs?check_name=Catalog+Core"), gh.calls)
+        self.assertIn(("PATCH", "/repos/o/lib-musl/check-runs/7"), gh.calls)       # existing: updated
+        self.assertIn(("POST", "/repos/o/lib-lwip/check-runs"), gh.calls)           # none yet: created
+        self.assertFalse(any("o/unikraft" in path for _, path in gh.calls))          # the root is done elsewhere
+
+
 class NightlyTest(unittest.TestCase):
     def test_only_changes_are_reported(self):
         prev = {"cells": {"a gcc q": "PASS", "b gcc q": "FAIL", "c gcc q": "FAIL", "d gcc q": "PASS"}}

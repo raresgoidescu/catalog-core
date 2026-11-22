@@ -12,6 +12,7 @@ import collections
 import glob
 import json
 import os
+import urllib.parse
 
 from . import verdict as V
 from .gh import GitHub
@@ -143,13 +144,14 @@ def post_member_checks(gh: GitHub, plan: dict, *, status: str, title_text: str, 
     for m in plan.get("cycle", []):
         if m["pr"] == plan.get("root"):
             continue
-        existing = gh.get(f"/repos/{m['repo']}/commits/{m['head_sha']}/check-runs?check_name={CHECK_NAME}")
-        ids = [c["id"] for c in (existing or {}).get("check_runs", [])]
         body = {"name": CHECK_NAME, "head_sha": m["head_sha"], "status": status, "details_url": plan.get("run_url"),
                 "output": {"title": title_text[:250], "summary": summary}}
         if conclusion:
             body["conclusion"] = conclusion
         try:
+            existing = gh.get(f"/repos/{m['repo']}/commits/{m['head_sha']}/check-runs?"
+                              + urllib.parse.urlencode({"check_name": CHECK_NAME}))
+            ids = [c["id"] for c in (existing or {}).get("check_runs", [])]
             if ids:
                 gh.request("PATCH", f"/repos/{m['repo']}/check-runs/{ids[0]}", body)
             else:
@@ -179,9 +181,13 @@ def cmd_start(args) -> int:
         t = "⏳ Waiting for maintainer approval" if not plan["trusted"] else f"⏳ Testing {len(plan['cells'])} app/compiler combinations"
         s, st, concl = render(plan, None, running=True), "in_progress", None
     write_step_summary(f"## {t}\n\n{s}")
-    check_id = post_check(gh, plan, status=st, title_text=t, summary=s, conclusion=concl)
-    if plan.get("cells") and not plan.get("delegate_to"):
-        post_member_checks(gh, plan, status=st, title_text=t, summary=s)
+    check_id = None
+    try:
+        check_id = post_check(gh, plan, status=st, title_text=t, summary=s, conclusion=concl)
+        if plan.get("cells") and not plan.get("delegate_to"):
+            post_member_checks(gh, plan, status=st, title_text=t, summary=s)
+    except Exception as e:     # a check is feedback; never lose the run over it
+        print(f"::warning::could not post the Catalog Core check: {e}")
     if check_id and os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"check_id={check_id}\n")
@@ -313,9 +319,12 @@ def cmd_finish(args) -> int:
         json.dump(report, f, indent=2)
     if not plan.get("errors") and plan.get("cells"):
         gh = GitHub()
-        post_check(gh, plan, status="completed", title_text=t, summary=s, conclusion=concl,
-                   check_id=args.check_id or None)
-        post_member_checks(gh, plan, status="completed", title_text=t, summary=s, conclusion=concl)
+        try:
+            post_check(gh, plan, status="completed", title_text=t, summary=s, conclusion=concl,
+                       check_id=args.check_id or None)
+            post_member_checks(gh, plan, status="completed", title_text=t, summary=s, conclusion=concl)
+        except Exception as e:
+            print(f"::warning::could not finish the Catalog Core check: {e}")
     if plan.get("event") == "schedule":
         notify_nightly(plan, verdicts, t, store)
     if store and os.environ.get("CI_DATA_TOKEN"):

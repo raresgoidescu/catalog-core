@@ -84,6 +84,12 @@ jobs:
           CI_MAX_DEP_PRS: ${{ vars.CI_MAX_DEP_PRS }}
         run: python3 -m ukci plan --out plan.json
 
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: plan
+          path: plan.json
+          retention-days: 14
+
       # The check goes on the root PR in a dependency repo; the token can
       # only write checks there. (catalog-core's own PRs need no check: the
       # workflow run shows up on them directly.)
@@ -105,11 +111,6 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
         run: python3 -m ukci check-start --plan plan.json
 
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: plan
-          path: plan.json
-          retention-days: 14
 
   # A PR changed: re-test the PRs that were last tested together with it
   # (they depend on it). Those runs don't fan out again, so cycles end here.
