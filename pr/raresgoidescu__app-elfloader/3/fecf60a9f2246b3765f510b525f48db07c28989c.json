@@ -1,115 +1,115 @@
 {
- "conclusion": "failure",
- "plan_hash": "77f68a92965175c0e1943f763b65c05035e1d88bbbed5e7274cc6aef25e16e7c",
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45020148304",
+ "conclusion": "success",
+ "plan_hash": "c4c5538674259b35638e406b949bb9fe0e3895dbe0be4c97030b3826075e79e4",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45023761959",
  "verdicts": [
   {
    "app": "bincompat-c-hello",
    "compiler": "gcc",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "qemu.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "bincompat-c-hello",
    "compiler": "gcc",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "fc.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "bincompat-c-hello",
    "compiler": "clang",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "qemu.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "bincompat-c-hello",
    "compiler": "clang",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "fc.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-basic",
    "compiler": "gcc",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "qemu.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-basic",
    "compiler": "gcc",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "fc.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-basic",
    "compiler": "clang",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "qemu.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-basic",
    "compiler": "clang",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "fc.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-net",
    "compiler": "gcc",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "qemu.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-net",
    "compiler": "gcc",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "fc.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-net",
    "compiler": "clang",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "qemu.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   },
   {
    "app": "elfloader-net",
    "compiler": "clang",
-   "detail": "the job produced no results (see the run for the failing step)",
+   "detail": "",
    "inherited_from": null,
-   "phase": null,
+   "reason": "",
    "variant": "fc.x86_64",
-   "verdict": "INFRA"
+   "verdict": "PASS"
   }
  ]
 }
