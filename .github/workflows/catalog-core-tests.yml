@@ -41,7 +41,7 @@ concurrency:
 
 jobs:
   mode-lookup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       mode: ${{ steps.resolve.outputs.mode }}
       dep_repo_path: ${{ steps.resolve.outputs.dep_repo_path }}
