@@ -8,13 +8,6 @@ dependencies = [
     "pydantic>=2.9",
 ]
 
-[dependency-groups]
-dev = [
-    "mypy>=1.13",
-    "pytest>=8.3",
-    "ruff>=0.8",
-]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -23,24 +16,4 @@ build-backend = "hatchling.build"
 packages = ["ukci"]
 
 [tool.uv]
-# Only resolve releases that have been public for two weeks.
 exclude-newer = "2026-11-08T00:00:00Z"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-
-[tool.ruff]
-line-length = 120
-target-version = "py312"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
-ignore = ["RUF001"]   # the check text uses × and similar on purpose
-
-[tool.mypy]
-python_version = "3.12"
-packages = ["ukci"]
-strict_optional = true
-warn_unused_ignores = true
-check_untyped_defs = true
-plugins = ["pydantic.mypy"]

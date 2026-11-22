@@ -35,23 +35,25 @@ depend on each other (A ↔ B) all work.
 - When a PR you depend on changes, your PR is tested again.
 
 **Reading the result.** A *configuration* is one app + compiler + variant
-(nginx, gcc, `qemu.x86_64`). The check has one row per verdict and first
-error, linked to the job logs.
+(nginx, gcc, `qemu.x86_64`). The check shows a grid of apps and compilers
+against variants, linked to the job logs, then one row per distinct error.
 
-| | verdict | meaning | blocks? |
-|---|---|---|---|
-| ❌ | regression | passes without your PRs, or fails there only later (builds, but doesn't boot) | yes |
-| ❌ | failure | fails, and there is nothing to compare it to (scheduled runs, a new app) | yes |
-| ⚠️ | CI error | CI couldn't tell: downloads failed twice, a job died, the comparison is missing. Not your fault: `recheck` | yes |
-| 🟡 | flaky | failed, then passed on retry with the same code | no |
-| ⚪ | already broken | fails without your PRs too, in the same phase (or earlier) | no |
-| ✅ | passed | | |
+| verdict | meaning | blocks? |
+|---|---|---|
+| regression | passes without your PRs, or fails there only later (builds, but doesn't boot) | yes |
+| failure | fails, and there is nothing to compare it to (scheduled runs, a new app) | yes |
+| CI error | CI couldn't tell: downloads failed twice, the runner lacks a tool, a job died, the comparison is missing. Not your fault: `recheck` | yes |
+| flaky | failed, then passed on retry with the same code | no |
+| already broken | fails without your PRs too, in the same phase (or earlier) | no |
+| passed | | |
 
 How it decides: a failed *run* is retried once, and so is a build that
 failed downloading sources. What still fails is built and run once more
 without your PRs. Only the phase (build or run) is compared, never the
 error text, because parallel builds print errors in a different order every
-time.
+time. When a nightly already ran a configuration on exactly the commits
+your PRs are based on (same toolchain too), its result is the comparison
+and nothing is rebuilt.
 
 **Re-running.** Comment `recheck` on the PR (members and the PR's author).
 Pushing, or editing the description, also re-runs it. If the exact same
@@ -71,13 +73,14 @@ cd nginx && ./.scripts/test/all.sh  # what CI runs, all variants
 `CI_TRUSTED_ASSOCIATIONS`), including any PR in their `Depends-On` set, only
 run after a maintainer approves the `ci-needs-approval` environment in the
 run linked from the check. Every new push needs a new approval. Declining
-shows up on the PR as "⛔ Not run".
+shows up on the PR as "Not run".
 
 **Adding an app.** Add its directory. CI reads its dependencies from
 `setup.sh` (`check_exists_and_create_symlink "<path>"`) and its variants
 from `.scripts/test/all.sh` (`test_build <variant>` / `test_build_run
-<variant>`). The `lint` workflow fails if it can't parse either. An app
-without `.scripts/test/all.sh` is listed as untested, not failed.
+<variant>`). A catalog-core PR fails if CI can't parse an app; other runs
+mention it. An app without `.scripts/test/all.sh` is listed as untested,
+not failed.
 
 **Adding a dependency repo.** Copy `.github/workflows/catalog-core-dispatch.yaml`
 from any dependency repo (it is identical everywhere) and give the repo the
@@ -145,21 +148,23 @@ from it.
 
 ## Developing
 
+The tests, linters and their workflow live on the `ci/dev` branch, on top of
+this one. Locally:
+
 ```sh
 cd .github/ci
-uv sync                                    # Python and dependencies, from uv.lock
-uv run pytest                              # tests
-uv run ruff check . && uv run ruff format --check . && uv run mypy
-uv run python -m ukci --root ../.. apps    # what CI reads from the app directories
+uv sync
+uv run python -m ukci --root ../.. apps
 uv run python -m ukci --root ../.. run --plan plan.json --app c-hello --compiler gcc --no-sudo
 ```
 
 | module | |
 |---|---|
 | `models.py` | the data passed between jobs (`plan.json`, `result.json`) |
-| `apps.py`, `repos.py` | apps, their dependencies and variants; repo names |
+| `apps.py` | apps, their dependencies and variants; repo names |
 | `resolve.py`, `plan.py` | Depends-On, then what to test at which commits |
 | `run.py` | one app and compiler, variant by variant |
-| `verdict.py` | results → verdicts |
+| `verdict.py` | results to verdicts |
 | `report.py`, `notify.py`, `render.py` | the check, Discord, what people read |
 | `github.py`, `git.py`, `data.py` | `gh`, git, and the `ci-data` branch |
+| `dashboard.py` | the Pages dashboard |

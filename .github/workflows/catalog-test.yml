@@ -1,26 +1,13 @@
 name: catalog-test
 
-# Tests changes to Unikraft and its libraries on the apps in this repository.
-#
-#   plan     trusted    reads the GitHub API, resolves Depends-On, pins one
-#                       commit per repo, picks the apps that link the changed
-#                       repos, posts the check. Never runs PR code.
-#   fan-out  trusted    re-tests the PRs that were tested together with this one.
-#   test     untrusted  runs PR code; holds no token or secret. Waits for a
-#                       maintainer's approval if any PR author isn't trusted.
-#   report   trusted    judges the results (regression / already broken /
-#                       flaky), finishes the check, records, notifies.
-#
-# See .github/ci/README.md.
-
 on:
   repository_dispatch:
-    types: [catalog_pr]     # sent by .github/workflows/dispatch.yml
+    types: [catalog_pr]
   pull_request:
     paths-ignore: ['**.md']
   schedule:
-    - cron: '0 1 * * *'                 # staging, nightly
-    - cron: &stable-cron '0 3 * * 0'    # stable, weekly
+    - cron: '0 1 * * *'
+    - cron: &stable-cron '0 3 * * 0'
   workflow_dispatch:
     inputs:
       channel:
@@ -38,8 +25,6 @@ on:
 
 permissions: {}
 
-# One run per PR: a newer event for the same PR replaces the running one.
-# Scheduled and manual runs queue per schedule / channel and are never cancelled.
 concurrency:
   group: >-
     catalog-test-${{ github.event_name }}-${{
@@ -78,9 +63,8 @@ jobs:
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.13.7"
-          enable-cache: false   # a cache would be writable by jobs that run PR code
+          enable-cache: false
 
-      # Planning reads public data only: the read-only GITHUB_TOKEN is enough.
       - name: Plan
         id: plan
         env:
@@ -98,8 +82,6 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-      # The check goes on the root PR of a dependency repository. Only
-      # repository_dispatch runs have one; the token can write checks there only.
       - name: GitHub App token
         id: token
         if: always() && github.event_name == 'repository_dispatch' && steps.plan.outputs.root_repo_name != ''
@@ -124,7 +106,7 @@ jobs:
     runs-on: *runner
     timeout-minutes: 10
     permissions:
-      contents: write     # repository_dispatch to this repository
+      contents: write
     steps:
       - *checkout
       - *uv
@@ -144,8 +126,6 @@ jobs:
     runs-on: *runner
     timeout-minutes: 150
     permissions: {}
-    # Runs of PRs by authors who aren't trusted wait in ci-needs-approval for a
-    # maintainer; the plan job refuses to run them if that environment has no reviewers.
     environment: ${{ needs.plan.outputs.environment }}
     strategy:
       fail-fast: false
@@ -178,20 +158,18 @@ jobs:
 
   report:
     needs: [plan, test]
-    # Every run that tested something; and every scheduled run, so a nightly
-    # that couldn't run says so on Discord.
     if: always() && (needs.plan.outputs.run == 'true' || github.event_name == 'schedule')
     runs-on: *runner
     timeout-minutes: 15
     permissions:
-      contents: write     # append results to the ci-data branch
-      actions: read       # job log links; whether a maintainer declined to run the tests
+      contents: write
+      actions: read
     steps:
       - *checkout
       - *uv
       - name: Download plan
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        continue-on-error: true   # missing if the plan job died; the report says so
+        continue-on-error: true
         with:
           name: plan
       - name: Download results
@@ -214,7 +192,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           CHECK_ID: ${{ needs.plan.outputs.check_id }}
-          PLAN_DIGEST: ${{ needs.plan.outputs.digest }}   # test jobs could replace plan.json
+          PLAN_DIGEST: ${{ needs.plan.outputs.digest }}
           TEST_RESULT: ${{ needs.test.result }}
           CI_DATA_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

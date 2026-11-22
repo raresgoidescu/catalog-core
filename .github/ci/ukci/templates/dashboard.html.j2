@@ -18,7 +18,7 @@ a{color:inherit}
 
 <h1>catalog-core CI</h1>
 <p class="m">{{ n_runs }} recorded runs · from the <code>ci-data</code> branch{% if n_bad %} · {{ n_bad }} unreadable records skipped{% endif %}</p>
-<div class="legend">{% for k, (one, many) in name.items() if k != "FAIL" %}<span><i class="dot {{ k }}"></i>{{ icon[k] }} {{ one }}</span>{% endfor %}</div>
+<div class="legend">{% for k, (one, many) in name.items() if k != "FAIL" %}<span><i class="dot {{ k }}"></i>{{ one }}</span>{% endfor %}</div>
 
 {% macro grid(g, label) %}
 <h2>{{ label }}</h2>

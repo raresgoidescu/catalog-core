@@ -1,26 +1,5 @@
 name: catalog-core-dispatch
 
-# Reusable workflow called by every dependency repo (unikraft, lib-*, app-*).
-# It tells catalog-core "PR <repo>#<n> changed" (opened, pushed, description
-# edited) or "someone commented `recheck` on it". No PR code is checked out
-# or run here. The payload is only a pointer: catalog-core reads the PR and
-# the comment back from the API and decides there whether to test, and who
-# may ask for a recheck (CI_TRUSTED_ASSOCIATIONS).
-#
-# Caller, identical in every repo (.github/workflows/catalog-core-dispatch.yaml):
-#
-#   on:
-#     pull_request_target:
-#       types: [opened, synchronize, reopened, edited, ready_for_review]
-#     issue_comment:
-#       types: [created]
-#   permissions: {}
-#   jobs:
-#     dispatch:
-#       uses: unikraft/catalog-core/.github/workflows/dispatch.yml@main
-#       secrets:
-#         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-
 on:
   workflow_call:
     secrets:
@@ -31,7 +10,6 @@ permissions: {}
 
 jobs:
   dispatch:
-    # A PR event (not a draft, not an edit of the title only), or a `recheck` comment on a PR.
     if: >-
       (github.event_name == 'pull_request_target' && !github.event.pull_request.draft &&
        (github.event.action != 'edited' || github.event.changes.body != null ||
@@ -50,7 +28,7 @@ jobs:
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: catalog-core
-          permission-contents: write   # what repository_dispatch requires
+          permission-contents: write
 
       - name: Notify catalog-core
         env:
@@ -59,7 +37,6 @@ jobs:
           REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
           COMMENT: ${{ github.event.comment.id || '' }}
-        # A recheck re-tests this PR only; a change also re-tests the PRs that depend on it.
         run: |
           gh api --method POST "/repos/${OWNER}/catalog-core/dispatches" \
             -f event_type=catalog_pr -f "client_payload[repo]=${REPO}" -f "client_payload[number]=${NUMBER}" \

@@ -1,15 +1,12 @@
-"""What people read: the check title and summary, and the dashboard page."""
-
 from __future__ import annotations
 
 import collections
 
 import jinja2
 
-from .models import Plan, Verdict, VerdictName
-from .verdict import ORDER
+from .models import LockEntry, Plan, Verdict, VerdictName
+from .verdict import BLOCKING, ORDER
 
-ICON = {"REGRESSION": "❌", "FAIL": "❌", "INFRA": "⚠️", "FLAKY": "🟡", "BROKEN_ON_BASE": "⚪", "PASS": "✅"}
 NAME = {
     "REGRESSION": ("regression", "regressions"),
     "FAIL": ("failure", "failures"),
@@ -18,12 +15,14 @@ NAME = {
     "BROKEN_ON_BASE": ("already broken", "already broken"),
     "PASS": ("passed", "passed"),
 }
-MAX_SUMMARY = 60000  # GitHub's limit for a check summary is 65535
+MAX_SUMMARY = 60000
 README = ".github/ci/README.md"
 
 
 def plural(n: int, one: str, many: str | None = None) -> str:
-    return f"{n} {one if n == 1 else (many or one + 's')}"
+    if n == 1:
+        return f"{n} {one}"
+    return f"{n} {many or one + 's'}"
 
 
 def oneline(text: str, limit: int = 200) -> str:
@@ -31,125 +30,165 @@ def oneline(text: str, limit: int = 200) -> str:
 
 
 def cell(text: str) -> str:
-    """Safe inside a markdown table cell."""
     return oneline(text, 300).replace("|", "\\|")
 
 
 def code(text: str) -> str:
-    return f"`{cell(text).replace('`', chr(39))}`" if text else ""
+    if not text:
+        return ""
+    return "`" + cell(text).replace("`", "'") + "`"
+
+
+def label(name: VerdictName) -> str:
+    word = NAME[name][0]
+    if name in BLOCKING:
+        return f"**{word}**"
+    return word
 
 
 def title(plan: Plan, verdicts: list[Verdict]) -> str:
     if plan.errors:
-        more = f" (+{len(plan.errors) - 1} more)" if len(plan.errors) > 1 else ""
-        return f"❌ Not tested: {oneline(plan.errors[0], 180)}{more}"
+        more = ""
+        if len(plan.errors) > 1:
+            more = f" (+{len(plan.errors) - 1} more)"
+        return f"Not tested: {oneline(plan.errors[0], 180)}{more}"
     if not plan.cells:
-        return "✅ No app uses the changed repositories"
+        return "No app uses the changed repositories"
     count = collections.Counter(v.verdict for v in verdicts)
     if count["PASS"] == len(verdicts):
-        return f"✅ All {plural(len(verdicts), 'configuration')} passed"
-    parts = [f"{count[k]} {NAME[k][count[k] != 1]}" for k in ORDER[:-1] if count[k]]
-    worst = next(k for k in ORDER if count[k])
-    return f"{ICON[worst]} " + " · ".join([*parts, f"{count['PASS']}/{len(verdicts)} passed"])
+        return f"All {plural(len(verdicts), 'configuration')} passed"
+    parts = []
+    for name in ORDER[:-1]:
+        if count[name]:
+            parts.append(f"{count[name]} {NAME[name][count[name] != 1]}")
+    parts.append(f"{count['PASS']} of {len(verdicts)} passed")
+    return ", ".join(parts)
 
 
-def describe(configs: list[tuple[str, str, str]], logs: dict[tuple[str, str], str]) -> str:
-    """'nginx gcc: qemu.x86_64, fc.x86_64; redis clang: …', each job linked to its log."""
+def describe(configs: list[tuple[str, str, str]]) -> str:
     by_job: dict[tuple[str, str], list[str]] = collections.defaultdict(list)
-    for app, cc, variant in sorted(configs):
-        by_job[app, cc].append(variant)
-    out = []
-    for (app, cc), variants in by_job.items():
-        name = f"{app} {cc}"
-        out.append(f"{f'[{name}]({logs[app, cc]})' if (app, cc) in logs else name}: {', '.join(variants)}")
-    return "; ".join(out)
+    for app, compiler, variant in sorted(configs):
+        by_job[app, compiler].append(variant)
+    return "; ".join(f"{app} {compiler}: {', '.join(variants)}" for (app, compiler), variants in by_job.items())
 
 
-def _results(verdicts: list[Verdict], logs: dict[tuple[str, str], str]) -> list[str]:
+def grid(verdicts: list[Verdict], logs: dict[tuple[str, str], str]) -> list[str]:
+    variants = sorted({v.variant for v in verdicts})
+    rows: dict[tuple[str, str], dict[str, VerdictName]] = collections.defaultdict(dict)
+    for v in verdicts:
+        rows[v.app, v.compiler][v.variant] = v.verdict
+    lines = ["| app | compiler | " + " | ".join(variants) + " |", "|---|---|" + "---|" * len(variants)]
+    for (app, compiler), by_variant in sorted(rows.items()):
+        name = app
+        if (app, compiler) in logs:
+            name = f"[{app}]({logs[app, compiler]})"
+        marks = []
+        for variant in variants:
+            if variant in by_variant:
+                marks.append(label(by_variant[variant]))
+            else:
+                marks.append("")
+        lines.append(f"| {name} | {compiler} | " + " | ".join(marks) + " |")
+    lines.append("")
+    return lines
+
+
+def errors_table(verdicts: list[Verdict]) -> list[str]:
     groups: dict[tuple[VerdictName, str], list[tuple[str, str, str]]] = collections.defaultdict(list)
     for v in verdicts:
         if v.verdict != "PASS":
             groups[v.verdict, v.reason].append((v.app, v.compiler, v.variant))
-    rows = sorted(groups.items(), key=lambda g: (ORDER.index(g[0][0]), -len(g[1])))
-    lines = []
-    if rows:
-        lines += ["| verdict | configurations | first error |", "|---|---|---|"]
-        lines += [f"| {ICON[k]} {NAME[k][0]} | {describe(c, logs)} | {code(reason)} |" for (k, reason), c in rows]
-        lines.append("")
-    passed = [(v.app, v.compiler, v.variant) for v in verdicts if v.verdict == "PASS"]
-    if passed:
-        lines += [f"<details><summary>✅ {plural(len(passed), 'configuration')} passed</summary>", ""]
-        lines += [describe(passed, logs), "", "</details>", ""]
+    if not groups:
+        return []
+    ordered = sorted(groups.items(), key=lambda item: (ORDER.index(item[0][0]), -len(item[1])))
+    lines = ["| verdict | first error | configurations |", "|---|---|---|"]
+    for (name, reason), configs in ordered:
+        lines.append(f"| {label(name)} | {code(reason)} | {describe(configs)} |")
+    lines.append("")
     return lines
 
 
-def _tested_as(plan: Plan) -> dict[str, str]:
-    """PR -> how its code went into the test."""
-    by_pr = {ref: e for e in plan.lock.values() if e.pr for ref in e.pr.split(" + ")}
+def tested_as(plan: Plan) -> dict[str, str]:
+    by_pr: dict[str, LockEntry] = {}
+    for entry in plan.lock.values():
+        if entry.pr:
+            for ref in entry.pr.split(" + "):
+                by_pr[ref] = entry
     out = {}
     for pr in plan.prs:
-        e = by_pr.get(pr.ref)
+        locked = by_pr.get(pr.ref)
         if not pr.used:
             out[pr.ref] = f"not used: {pr.note}"
-        elif e is None:
+        elif locked is None:
             out[pr.ref] = "not needed by the tested apps"
-        elif e.parts:
-            others = ", ".join(x.label for x in e.parts if x.label != pr.ref)
-            out[pr.ref] = f"`{e.sha[:10]}`, merged with {others} into `{pr.base_ref}`"
+        elif locked.parts:
+            others = ", ".join(part.label for part in locked.parts if part.label != pr.ref)
+            out[pr.ref] = f"`{locked.sha[:10]}`, merged with {others} into `{pr.base_ref}`"
         else:
-            out[pr.ref] = f"`{e.sha[:10]}`, merged into `{pr.base_ref}`"
+            out[pr.ref] = f"`{locked.sha[:10]}`, merged into `{pr.base_ref}`"
     return out
 
 
 def check(
     plan: Plan,
     verdicts: list[Verdict] | None = None,
-    *,
     running: bool = False,
     banner: str = "",
     logs: dict[tuple[str, str], str] | None = None,
 ) -> str:
-    """The check summary (also the workflow run summary)."""
-    lines = [f"> {cell(x)}" for x in ([banner] if banner else []) + plan.notes]
-    if lines:
+    lines = []
+    quoted = list(plan.notes)
+    if banner:
+        quoted.insert(0, banner)
+    for note in quoted:
+        lines.append(f"> {cell(note)}")
+    if quoted:
         lines.append("")
     if plan.errors:
-        lines += ["**Not tested**", ""] + [f"- {oneline(e, 1000)}" for e in plan.errors] + [""]
+        lines += ["**Not tested**", ""]
+        lines += [f"- {oneline(error, 1000)}" for error in plan.errors]
+        lines.append("")
     if running and not plan.trusted:
-        lines += [
-            f"**Waiting for a maintainer to [approve the run]({plan.run_url})**: these PRs are by authors "
-            "who aren't members, and none of their code runs before that.",
-            "",
-            *[f"- {cell(u)}" for u in plan.untrusted],
-            "",
-        ]
+        lines.append(
+            f"**Waiting for a maintainer to [approve the run]({plan.run_url})**: some PRs are by authors "
+            "CI doesn't trust yet, and none of their code runs before that."
+        )
+        lines.append("")
+        lines += [f"- {cell(who)}" for who in plan.untrusted]
+        lines.append("")
     if running and plan.cells:
         by_app: dict[tuple[str, str], list[str]] = collections.defaultdict(list)
         for c in plan.cells:
             by_app[c.app, c.why].append(c.compiler)
         lines += [f"**Testing {plural(plan.n_configs, 'configuration')}**", ""]
-        lines += [f"- {app} ({', '.join(ccs)}): {why}" for (app, why), ccs in sorted(by_app.items())] + [""]
-    if verdicts is not None:
-        lines += _results(verdicts, logs or {})
+        for (app, why), compilers in sorted(by_app.items()):
+            lines.append(f"- {app} ({', '.join(compilers)}): {why}")
+        lines.append("")
+    if verdicts:
+        lines += grid(verdicts, logs or {})
+        lines += errors_table(verdicts)
     if plan.prs:
-        tested_as = _tested_as(plan)
+        how = tested_as(plan)
         lines += ["| PR | tested as | found via |", "|---|---|---|"]
-        lines += [
-            f"| [{p.ref}]({p.url}) {cell(p.title[:60])} | {cell(tested_as[p.ref])} | {cell(p.via)} |" for p in plan.prs
-        ]
+        for pr in plan.prs:
+            lines.append(f"| [{pr.ref}]({pr.url}) {cell(pr.title[:60])} | {cell(how[pr.ref])} | {cell(pr.via)} |")
         lines.append("")
     if plan.lock:
         lines += ["<details><summary>Exact commits</summary>", "", "| repo | commit | from |", "|---|---|---|"]
         if plan.catalog:
             lines.append(f"| catalog-core | `{plan.catalog.sha[:10]}` | {cell(plan.catalog.source)} |")
-        lines += [f"| {path} ({e.repo}) | `{e.sha[:10]}` | {cell(e.source)} |" for path, e in sorted(plan.lock.items())]
+        for path, entry in sorted(plan.lock.items()):
+            lines.append(f"| {path} ({entry.repo}) | `{entry.sha[:10]}` | {cell(entry.source)} |")
         lines += ["", "</details>", ""]
     footer = [f"[Workflow run]({plan.run_url})"]
     if plan.catalog:
         footer.append(f"[how to read this](https://github.com/{plan.catalog.repo}/blob/{plan.catalog.sha}/{README})")
     footer.append(f"plan `{plan.plan_hash[:10]}`")
-    text = "\n".join([*lines, " · ".join(footer)])
-    return text if len(text) < MAX_SUMMARY else text[:MAX_SUMMARY] + "\n\n…(truncated, see the workflow run)"
+    lines.append(" · ".join(footer))
+    text = "\n".join(lines)
+    if len(text) < MAX_SUMMARY:
+        return text
+    return text[:MAX_SUMMARY] + "\n\n(truncated, see the workflow run)"
 
 
 def reused(plan: Plan) -> str:
@@ -161,10 +200,10 @@ def reused(plan: Plan) -> str:
     return note + plan.reused.summary
 
 
-_html = jinja2.Environment(
+TEMPLATES = jinja2.Environment(
     loader=jinja2.PackageLoader("ukci", "templates"), autoescape=True, undefined=jinja2.StrictUndefined
 )
 
 
 def dashboard(**context) -> str:
-    return _html.get_template("dashboard.html.j2").render(icon=ICON, name=NAME, **context)
+    return TEMPLATES.get_template("dashboard.html.j2").render(name=NAME, **context)

@@ -1,9 +1,3 @@
-"""GitHub access through the `gh` CLI (preinstalled on GitHub's runners).
-
-`gh` handles authentication (GH_TOKEN), pagination and GraphQL. This
-module only adds the handful of calls CI needs, in CI's own terms.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -29,6 +23,9 @@ query($owner: String!, $name: String!, $number: Int!) {
   }
 }"""
 
+TRANSIENT = ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "timeout", "connection reset", "EOF")
+MERGEABLE = {"MERGEABLE": True, "CONFLICTING": False}
+
 
 class GitHubError(RuntimeError):
     pass
@@ -36,33 +33,39 @@ class GitHubError(RuntimeError):
 
 class GitHub:
     def __init__(self, token: str | None = None):
-        self.token = token if token is not None else os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+        if token is None:
+            token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+        self.token = token
 
     def gh(self, *args: str, body: Any = None) -> Any:
-        """Run `gh`, retrying transient server errors; return parsed JSON (or None)."""
         env = dict(os.environ, GH_TOKEN=self.token or "", GH_PROMPT_DISABLED="1", NO_COLOR="1")
         stdin = json.dumps(body) if body is not None else None
         for attempt in range(3):
             p = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True, env=env, check=False)
             if p.returncode == 0:
-                return json.loads(p.stdout) if p.stdout.strip() else None
-            transient = any(
-                s in p.stderr
-                for s in ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "timeout", "connection reset", "EOF")
-            )
+                if not p.stdout.strip():
+                    return None
+                return json.loads(p.stdout)
+            transient = any(s in p.stderr for s in TRANSIENT)
             if not transient or attempt == 2:
                 raise GitHubError(f"gh {' '.join(args[:2])}: {p.stderr.strip()[:300]}")
             time.sleep(2 ** (attempt + 1))
         raise AssertionError("unreachable")
 
     def api(self, path: str, method: str = "GET", body: Any = None) -> Any:
-        args = ["api", "--method", method, path]
-        return self.gh(*args, "--input", "-", body=body) if body is not None else self.gh(*args)
+        if body is None:
+            return self.gh("api", "--method", method, path)
+        return self.gh("api", "--method", method, path, "--input", "-", body=body)
 
-    # --- pull requests ---------------------------------------------------------
+    def get_or_none(self, path: str) -> Any:
+        try:
+            return self.api(path)
+        except GitHubError as e:
+            if "HTTP 404" in str(e):
+                return None
+            raise
 
-    def pull_request(self, repo: str, number: int, *, wait_mergeable: float = 30.0) -> PullRequest | None:
-        """A PR with what the resolver needs; waits briefly while GitHub computes mergeability."""
+    def pull_request(self, repo: str, number: int, wait_mergeable: float = 30.0) -> PullRequest | None:
         owner, name = repo.split("/")
         deadline = time.monotonic() + wait_mergeable
         while True:
@@ -80,18 +83,25 @@ class GitHub:
                     f"number={number}",
                 )
             except GitHubError as e:
-                if "Could not resolve to" in str(e):  # no such repository or PR
+                if "Could not resolve to" in str(e):
                     return None
                 raise
-            d = ((data or {}).get("data", {}).get("repository") or {}).get("pullRequest")
+            repository = (data or {}).get("data", {}).get("repository") or {}
+            d = repository.get("pullRequest")
             if d is None:
                 return None
             if d["state"] != "OPEN" or d["mergeable"] != "UNKNOWN" or time.monotonic() > deadline:
                 break
             time.sleep(3)
+        mergeable = MERGEABLE.get(d["mergeable"])
         merge = d.get("potentialMergeCommit") or {}
         parents = (merge.get("parents") or {}).get("nodes") or []
-        mergeable = {"MERGEABLE": True, "CONFLICTING": False}.get(d["mergeable"])
+        merge_sha = None
+        merge_base_sha = None
+        if mergeable:
+            merge_sha = merge.get("oid")
+            if parents:
+                merge_base_sha = parents[0]["oid"]
         return PullRequest(
             repo=d["baseRepository"]["nameWithOwner"],
             number=d["number"],
@@ -99,18 +109,18 @@ class GitHub:
             base_ref=d["baseRefName"],
             head_sha=d["headRefOid"],
             mergeable=mergeable,
-            merge_sha=merge.get("oid") if mergeable else None,
-            merge_base_sha=parents[0]["oid"] if mergeable and parents else None,
+            merge_sha=merge_sha,
+            merge_base_sha=merge_base_sha,
             author=(d.get("author") or {}).get("login", "ghost"),
             association=d["authorAssociation"],
             title=d.get("title") or "",
             body=d.get("body") or "",
-            commit_messages=[n["commit"]["message"] for n in d["commits"]["nodes"]],
+            commit_messages=[node["commit"]["message"] for node in d["commits"]["nodes"]],
         )
 
     def contains(self, repo: str, ancestor: str, descendant: str) -> bool:
-        """Does commit `descendant` contain `ancestor`?"""
-        return self.api(f"/repos/{repo}/compare/{ancestor}...{descendant}")["status"] in ("ahead", "identical")
+        status = self.api(f"/repos/{repo}/compare/{ancestor}...{descendant}")["status"]
+        return status in ("ahead", "identical")
 
     def branch_sha(self, repo: str, branch: str) -> str:
         return self.api(f"/repos/{repo}/commits/{branch}")["sha"]
@@ -120,32 +130,16 @@ class GitHub:
         return [f["filename"] for page in pages for f in page]
 
     def comment(self, repo: str, comment_id: int) -> dict | None:
-        try:
-            return self.api(f"/repos/{repo}/issues/comments/{comment_id}")
-        except GitHubError as e:
-            if "HTTP 404" in str(e):
-                return None
-            raise
+        return self.get_or_none(f"/repos/{repo}/issues/comments/{comment_id}")
 
     def environment(self, repo: str, name: str) -> dict | None:
-        try:
-            return self.api(f"/repos/{repo}/environments/{name}")
-        except GitHubError as e:
-            if "HTTP 404" in str(e):
-                return None
-            raise
+        return self.get_or_none(f"/repos/{repo}/environments/{name}")
 
     def file(self, repo: str, path: str, ref: str) -> bytes | None:
-        """A file's content at `ref`, or None if there is none."""
-        try:
-            d = self.api(f"/repos/{repo}/contents/{path}?ref={ref}")
-        except GitHubError as e:
-            if "HTTP 404" in str(e):
-                return None
-            raise
-        return base64.b64decode(d["content"]) if isinstance(d, dict) and d.get("encoding") == "base64" else None
-
-    # --- checks, dispatches, approvals -------------------------------------------
+        d = self.get_or_none(f"/repos/{repo}/contents/{path}?ref={ref}")
+        if isinstance(d, dict) and d.get("encoding") == "base64":
+            return base64.b64decode(d["content"])
+        return None
 
     def put_check(self, repo: str, body: dict, check_id: int | None = None) -> int:
         if check_id:
@@ -159,6 +153,9 @@ class GitHub:
         return self.api(f"/repos/{repo}/actions/runs/{run_id}/approvals") or []
 
     def run_jobs(self, repo: str, run_id: str) -> dict[str, str]:
-        """Job name -> URL of its log, for the jobs of this run attempt."""
         pages = self.gh("api", "--paginate", "--slurp", f"/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100")
-        return {j["name"]: j["html_url"] for page in pages or [] for j in page.get("jobs", [])}
+        jobs = {}
+        for page in pages or []:
+            for job in page.get("jobs", []):
+                jobs[job["name"]] = job["html_url"]
+        return jobs
