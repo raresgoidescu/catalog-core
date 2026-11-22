@@ -17,3 +17,28 @@ packages = ["ukci"]
 
 [tool.uv]
 exclude-newer = "2026-11-08T00:00:00Z"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["ukci"]
+strict_optional = true
+warn_unused_ignores = true
+check_untyped_defs = true
+plugins = ["pydantic.mypy"]
