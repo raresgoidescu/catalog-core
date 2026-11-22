@@ -1,0 +1,424 @@
+{
+ "attempt": "1",
+ "catalog": {
+  "from": "this workflow's commit",
+  "repo": "raresgoidescu/catalog-core",
+  "sha": "f1571033aa7af9a9697e18eb4be99ab8cb5fb1b7"
+ },
+ "channel": "staging",
+ "conclusion": "failure",
+ "event": "repository_dispatch",
+ "lock": {
+  "apps/elfloader": {
+   "from": "staging",
+   "repo": "unikraft/app-elfloader",
+   "sha": "0cd7a2b2c4d5ece85647c0c9903b50426e849420"
+  },
+  "libs/libelf": {
+   "from": "raresgoidescu/lib-libelf#5 merged into staging",
+   "pr": "raresgoidescu/lib-libelf#5",
+   "repo": "raresgoidescu/lib-libelf",
+   "sha": "dfdbb836270518d86e1521f54fc9d18e85374587"
+  },
+  "libs/lwip": {
+   "from": "staging",
+   "repo": "unikraft/lib-lwip",
+   "sha": "ec55ae17618feeb57c8c10109bcf5c42723e8e95"
+  },
+  "unikraft": {
+   "from": "staging",
+   "repo": "unikraft/unikraft",
+   "sha": "7a2cdc1554666de326eb83da1a364653b93e610d"
+  }
+ },
+ "plan_hash": "060ddc1f5a59dc1376bd4b864a3dcdb048cba157397c3badd2ae3db736b9f51e",
+ "prs": [
+  {
+   "base_ref": "staging",
+   "head_sha": "0950c6005a28686b7bff67cb466c8d7289326e75",
+   "merge_sha": "dfdbb836270518d86e1521f54fc9d18e85374587",
+   "pr": "raresgoidescu/lib-libelf#5",
+   "title": "scenario C: L4 breaks the build",
+   "url": "https://github.com/raresgoidescu/lib-libelf/pull/5",
+   "used": true,
+   "via": "root"
+  }
+ ],
+ "root": "raresgoidescu/lib-libelf#5",
+ "run_id": "45018902785",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785",
+ "time": "2026-11-22T11:49:09+00:00",
+ "timings": [
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 19.3,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 19.5,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 16.2,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 16.4,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 20.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.4,
+   "total_s": 21.4,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 20.5,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 20.8,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 10.1,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 10.3,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 9.5,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 9.7,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 12.8,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 13.1,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 12.1,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 12.4,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 17.2,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 5.2,
+   "total_s": 22.5,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 16.2,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 5.2,
+   "total_s": 21.4,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 20.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 26.2,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 20.4,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 25.6,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 16.2,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 5.2,
+   "total_s": 21.5,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 14.8,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 5.2,
+   "total_s": 20.0,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 23.5,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 28.7,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 18.3,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 23.5,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 13.0,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "total_s": 26.2,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 10.2,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "total_s": 23.3,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 22.7,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 25.9,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 14.3,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 17.4,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 12.5,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 13.2,
+   "total_s": 25.7,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 10.6,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "total_s": 23.7,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 21.2,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 24.3,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "base",
+   "build": "PASS",
+   "build_s": 15.3,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 18.4,
+   "variant": "fc.x86_64"
+  }
+ ],
+ "title": "\u274c 12 regression \u00b7 0 passed",
+ "tools": {
+  "aarch64-gcc": "aarch64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "clang": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+  "firecracker": "Firecracker v1.7.0",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "kernel": "7.0.0-1017-azure",
+  "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+ },
+ "verdicts": [
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  }
+ ]
+}

@@ -1,0 +1,103 @@
+{
+ "conclusion": "failure",
+ "plan_hash": "060ddc1f5a59dc1376bd4b864a3dcdb048cba157397c3badd2ae3db736b9f51e",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785",
+ "verdicts": [
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "REGRESSION"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "build failed with the PRs; passes on staging without them",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "REGRESSION"
+  }
+ ]
+}
