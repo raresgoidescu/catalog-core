@@ -1,101 +1,113 @@
 {
  "conclusion": "failure",
- "plan_hash": "81c25f984a0adb91a84e011a6d5bdf5ebe4e676dd52ea1dfc5f5f4fae9725354",
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45019220629",
+ "plan_hash": "4aa262a1034471d2f51367d4fe963a9e394a04c7e841ecdf0d3364f6d9973210",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45021729807",
  "verdicts": [
   {
    "app": "bincompat-c-hello",
    "compiler": "gcc",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "bincompat-c-hello",
    "compiler": "gcc",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "bincompat-c-hello",
    "compiler": "clang",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "bincompat-c-hello",
    "compiler": "clang",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-basic",
    "compiler": "gcc",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-basic",
    "compiler": "gcc",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-basic",
    "compiler": "clang",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-basic",
    "compiler": "clang",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-net",
    "compiler": "gcc",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-net",
    "compiler": "gcc",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-net",
    "compiler": "clang",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
   {
    "app": "elfloader-net",
    "compiler": "clang",
-   "detail": "build failed with the PRs; passes on staging without them; **inherited**: also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45018902785)",
-   "phase": "build",
+   "detail": "passes on staging without the PRs. **Inherited**: it also fails in the own run of [raresgoidescu/lib-libelf#5](https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450)",
+   "inherited_from": "raresgoidescu/lib-libelf#5",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   }
