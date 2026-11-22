@@ -1,0 +1,115 @@
+{
+ "conclusion": "success",
+ "plan_hash": "9c8e9bd2d52edb32b379f8a0b060f2396fa972e05bb0fd7711d2c047b3d563d7",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45020103916",
+ "verdicts": [
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "passed",
+   "inherited_from": null,
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  }
+ ]
+}
