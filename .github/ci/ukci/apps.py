@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
-from typing import Iterable
 
 from . import repos
 
@@ -31,16 +31,16 @@ TEST_SCRIPT = ".scripts/test/all.sh"
 
 @dataclass(frozen=True)
 class Variant:
-    name: str          # e.g. "qemu.x86_64"
-    platform: str      # "qemu" | "fc" | "xen" | ...
-    arch: str          # "x86_64" | "arm64" | ...
-    run: bool          # True: build and run; False: build only
+    name: str  # e.g. "qemu.x86_64"
+    platform: str  # "qemu" | "fc" | "xen" | ...
+    arch: str  # "x86_64" | "arm64" | ...
+    run: bool  # True: build and run; False: build only
 
 
 @dataclass
 class App:
     name: str
-    repos: list[str] = field(default_factory=list)        # local paths, e.g. ["unikraft", "libs/musl"]
+    repos: list[str] = field(default_factory=list)  # local paths, e.g. ["unikraft", "libs/musl"]
     variants: list[Variant] = field(default_factory=list)
     has_tests: bool = False
     problems: list[str] = field(default_factory=list)
@@ -67,7 +67,7 @@ def load_app(root: str, name: str) -> App:
     app.repos = SYMLINK_RE.findall(text)
     if len(SYMLINK_ANY_RE.findall(text)) != len(app.repos):
         app.problems.append(
-            'setup.sh: a check_exists_and_create_symlink call is not of the form '
+            "setup.sh: a check_exists_and_create_symlink call is not of the form "
             'check_exists_and_create_symlink "<path>"'
         )
     for path in app.repos:
@@ -86,8 +86,7 @@ def load_app(root: str, name: str) -> App:
         found = VARIANT_RE.findall(ttext)
         if len(VARIANT_ANY_RE.findall(ttext)) != len(found):
             app.problems.append(
-                f"{TEST_SCRIPT}: a test_build/test_build_run line is not of the form "
-                "test_build[_run] <platform>.<arch>"
+                f"{TEST_SCRIPT}: a test_build/test_build_run line is not of the form test_build[_run] <platform>.<arch>"
             )
         for kind, vname in found:
             platform, arch = _parse_variant(vname)

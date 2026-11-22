@@ -48,7 +48,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHONPATH: .github/ci
+  UKCI: uv run --frozen --project .github/ci python -m ukci
   # Scheduled runs test staging, except the one with this cron, which tests stable.
   CI_STABLE_SCHEDULE: '0 3 * * 0'
 
@@ -74,6 +74,10 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          enable-cache: false   # a cache would be writable by jobs that run PR code
 
       # Planning only reads public data: the read-only GITHUB_TOKEN is enough.
       - name: Plan
@@ -82,7 +86,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CI_TRUSTED_ASSOCIATIONS: ${{ vars.CI_TRUSTED_ASSOCIATIONS }}
           CI_MAX_DEP_PRS: ${{ vars.CI_MAX_DEP_PRS }}
-        run: python3 -m ukci plan --out plan.json
+        run: $UKCI plan --out plan.json
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -109,7 +113,7 @@ jobs:
         if: steps.token.outcome == 'success'
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
-        run: python3 -m ukci check-start --plan plan.json
+        run: $UKCI check-start --plan plan.json
 
 
   # A PR changed: re-test the PRs that were last tested together with it
@@ -125,6 +129,10 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          enable-cache: false   # a cache would be writable by jobs that run PR code
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -133,7 +141,7 @@ jobs:
       - name: Re-test dependent PRs
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -m ukci fan-out --plan plan.json
+        run: $UKCI fan-out --plan plan.json
 
   test:
     needs: plan
@@ -154,6 +162,10 @@ jobs:
           repository: ${{ needs.plan.outputs.catalog_repo }}
           ref: ${{ needs.plan.outputs.catalog_sha }}
           persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          enable-cache: false   # a cache would be writable by jobs that run PR code
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -167,7 +179,7 @@ jobs:
         env:
           APP: ${{ matrix.app }}
           COMPILER: ${{ matrix.compiler }}
-        run: python3 -m ukci run --plan plan.json --app "$APP" --compiler "$COMPILER" --out results
+        run: $UKCI run --plan plan.json --app "$APP" --compiler "$COMPILER" --out results
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
@@ -189,6 +201,10 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          enable-cache: false   # a cache would be writable by jobs that run PR code
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -218,7 +234,7 @@ jobs:
           CI_DATA_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MENTION: ${{ vars.DISCORD_MENTION }}
-        run: python3 -m ukci report --plan plan.json --results results --out verdicts.json --check-id "$CHECK_ID"
+        run: $UKCI report --plan plan.json --results results --out verdicts.json --check-id "$CHECK_ID"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

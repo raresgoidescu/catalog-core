@@ -27,7 +27,7 @@ repo_name()
     esac
 }
 
-paths=$(sed -n 's/^[[:space:]]*check_exists_and_create_symlink[[:space:]]*"\([^"]*\)"[[:space:]]*$/\1/p' */setup.sh | sort -u)
+paths=$(sed -n 's/^[[:space:]]*check_exists_and_create_symlink[[:space:]]*"\([^"]*\)"[[:space:]]*$/\1/p' ./*/setup.sh | sort -u)
 
 for path in $paths; do
     name=$(repo_name "$path") || exit 1

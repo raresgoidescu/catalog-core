@@ -1,114 +1,158 @@
-import os
+"""ci-data, blame, the cycle's checks, and nightly change detection."""
+
 import subprocess
-import tempfile
-import unittest
 
-from ukci import data, report, verdict as V
+import pytest
 
-
-def v(app, variant, verdict, cc="gcc"):
-    return V.Verdict(app, cc, variant, verdict, "reason", "detail")
+from ukci import checks, notify
+from ukci.data import OwnResult, Store
+from ukci.models import CycleMember, Plan, PlannedPR, Report, Verdict
 
 
-class StoreTest(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.remote = os.path.join(self.tmp.name, "remote.git")
-        subprocess.run(["git", "init", "-q", "--bare", self.remote], check=True)
-
-    def tearDown(self):
-        self.tmp.cleanup()
-
-    def store(self, name):
-        return data.Store("o/catalog-core", None, os.path.join(self.tmp.name, name), url=self.remote).open()
-
-    def test_concurrent_writers_both_land(self):
-        a, b = self.store("a"), self.store("b")          # both start from an empty branch
-        a.write("runs/1.json", {"x": 1})
-        b.write("runs/2.json", {"x": 2})
-        self.assertTrue(a.commit_and_push("a"))
-        self.assertTrue(b.commit_and_push("b"))           # rebases onto a's push
-        c = self.store("c")
-        self.assertEqual((c.read("runs/1.json"), c.read("runs/2.json")), ({"x": 1}, {"x": 2}))
-
-    def test_record_run_dependents_and_own_result(self):
-        s = self.store("s")
-        plan = {"root": "o/unikraft#1", "root_head_sha": "h1", "run_url": "u", "plan_hash": "p", "event": "repository_dispatch",
-                "prs": [{"pr": "o/unikraft#1", "used": True}, {"pr": "o/lib-musl#12", "used": True}]}
-        data.record_run(s, plan, {"conclusion": "failure", "title": "t", "verdicts": [{"app": "nginx"}]}, [])
-        self.assertEqual(data.dependents(s, "o/lib-musl#12"), ["o/unikraft#1"])
-        self.assertEqual(data.own_result(s, "o/unikraft#1", "h1")["conclusion"], "failure")
-        self.assertIsNone(data.own_result(s, "o/unikraft#1", "other-head"))
+def v(app, variant, name, cc="gcc", reason="reason"):
+    return Verdict(app=app, compiler=cc, variant=variant, verdict=name, reason=reason, detail="detail")
 
 
-class BlameTest(unittest.TestCase):
-    plan = {"root": "o/unikraft#1",
-            "prs": [{"pr": "o/unikraft#1", "used": True, "head_sha": "h1"},
-                    {"pr": "o/lib-musl#12", "used": True, "head_sha": "m12"}]}
-
-    class FakeStore:
-        def __init__(self, own):
-            self.own = own
-
-        def read(self, rel):
-            return self.own if rel == "pr/o__lib-musl/12/m12.json" else None
-
-    def detail_with(self, own):
-        vs = [v("nginx", "qemu.x86_64", V.REGRESSION)]
-        report.blame(self.plan, vs, self.FakeStore(own))
-        return vs[0].detail
-
-    def test_inherited(self):
-        own = {"run_url": "r12", "verdicts": [{"app": "nginx", "compiler": "gcc", "variant": "qemu.x86_64", "verdict": "REGRESSION"}]}
-        self.assertIn("**Inherited**: it also fails in the own run of [o/lib-musl#12](r12)", self.detail_with(own))
-        vs = [v("nginx", "qemu.x86_64", V.REGRESSION)]
-        report.blame(self.plan, vs, self.FakeStore(own))
-        self.assertEqual(report.title({"cells": [1]}, vs), "❌ 1 regression (inherited from o/lib-musl#12) · 0/1 passed")
-
-    def test_caused_here(self):
-        own = {"run_url": "r12", "verdicts": [{"app": "nginx", "compiler": "gcc", "variant": "qemu.x86_64", "verdict": "PASS"}]}
-        self.assertIn("comes from this PR", self.detail_with(own))
-
-    def test_unknown(self):
-        self.assertIn("Not known yet", self.detail_with(None))
+@pytest.fixture
+def remote(tmp_path):
+    path = tmp_path / "remote.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(path)], check=True)
+    return str(path)
 
 
-class MemberChecksTest(unittest.TestCase):
-    class FakeGH:
-        token = "t"
-
-        def __init__(self):
-            self.calls = []
-
-        def get(self, path):
-            self.calls.append(("GET", path))
-            return {"check_runs": [{"id": 7}]} if "lib-musl" in path else {"check_runs": []}
-
-        def request(self, method, path, body):
-            self.calls.append((method, path))
-            return {"id": 1}
-
-    def test_updates_or_creates_on_every_other_cycle_member(self):
-        gh = self.FakeGH()
-        plan = {"root": "o/unikraft#1", "run_url": "u", "cycle": [
-            {"pr": "o/unikraft#1", "repo": "o/unikraft", "head_sha": "a"},
-            {"pr": "o/lib-musl#2", "repo": "o/lib-musl", "head_sha": "b"},
-            {"pr": "o/lib-lwip#3", "repo": "o/lib-lwip", "head_sha": "c"}]}
-        report.post_member_checks(gh, plan, status="completed", title_text="t", summary="s", conclusion="success")
-        self.assertIn(("GET", "/repos/o/lib-musl/commits/b/check-runs?check_name=Catalog+Core"), gh.calls)
-        self.assertIn(("PATCH", "/repos/o/lib-musl/check-runs/7"), gh.calls)       # existing: updated
-        self.assertIn(("POST", "/repos/o/lib-lwip/check-runs"), gh.calls)           # none yet: created
-        self.assertFalse(any("o/unikraft" in path for _, path in gh.calls))          # the root is done elsewhere
+def store(tmp_path, remote, name):
+    return Store("o/catalog-core", None, str(tmp_path / name), url=remote).open()
 
 
-class NightlyTest(unittest.TestCase):
-    def test_only_changes_are_reported(self):
-        prev = {"cells": {"a gcc q": "PASS", "b gcc q": "FAIL", "c gcc q": "FAIL", "d gcc q": "PASS"}}
-        broke, fixed = report.nightly_changes(prev, [
-            v("a", "q", V.FAIL), v("b", "q", V.PASS), v("c", "q", V.FAIL), v("d", "q", V.FLAKY), v("e", "q", V.FAIL)])
-        self.assertEqual(broke, ["a gcc q: detail"])      # e is new, d flaky is not a failure, c unchanged
-        self.assertEqual(fixed, ["b gcc q"])
+def test_concurrent_writers_both_land(tmp_path, remote):
+    a, b = store(tmp_path, remote, "a"), store(tmp_path, remote, "b")  # both start from an empty branch
+    a.write("runs/1.json", {"x": 1})
+    b.write("runs/2.json", {"x": 2})
+    assert a.push("a") and b.push("b")  # b rebases onto a's push
+    c = store(tmp_path, remote, "c")
+    assert (c.read("runs/1.json"), c.read("runs/2.json")) == ({"x": 1}, {"x": 2})
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_record_dependents_and_own_result(tmp_path, remote):
+    s = store(tmp_path, remote, "s")
+    plan = Plan(
+        root="o/unikraft#1",
+        root_head_sha="h1",
+        run_url="u",
+        plan_hash="p",
+        event="repository_dispatch",
+        prs=[
+            PlannedPR(ref=r, url="", title="", head_sha="", base_ref="staging", via="", used=True)
+            for r in ("o/unikraft#1", "o/lib-musl#12")
+        ],
+    )
+    s.record(plan, Report(plan_hash="p", conclusion="failure", title="t", verdicts=[v("nginx", "q", "FAIL")]), [])
+    assert s.dependents("o/lib-musl#12") == ["o/unikraft#1"]
+    assert s.own_result("o/unikraft#1", "h1").conclusion == "failure"
+    assert s.own_result("o/unikraft#1", "other-head") is None
+
+
+class FakeStore:
+    def __init__(self, own):
+        self.own = own
+
+    def own_result(self, ref, head):
+        return self.own if (ref, head) == ("o/lib-musl#12", "m12") else None
+
+
+@pytest.mark.parametrize(
+    ("own", "expected"),
+    [
+        (
+            OwnResult(run_url="r12", plan_hash="p", conclusion="failure", verdicts=[v("nginx", "q", "REGRESSION")]),
+            "**Inherited**: it also fails in the own run of [o/lib-musl#12](r12)",
+        ),
+        (
+            OwnResult(run_url="r12", plan_hash="p", conclusion="success", verdicts=[v("nginx", "q", "PASS")]),
+            "comes from this PR",
+        ),
+        (None, "Not known yet whether it comes from o/lib-musl#12"),
+    ],
+)
+def test_blame(own, expected):
+    plan = Plan(
+        root="o/unikraft#1",
+        prs=[
+            PlannedPR(ref="o/unikraft#1", url="", title="", head_sha="h1", base_ref="staging", via="root", used=True),
+            PlannedPR(ref="o/lib-musl#12", url="", title="", head_sha="m12", base_ref="staging", via="", used=True),
+        ],
+    )
+    vs = [v("nginx", "q", "REGRESSION")]
+    checks.blame(plan, vs, FakeStore(own))
+    assert expected in vs[0].detail
+    assert vs[0].inherited_from == ("o/lib-musl#12" if "Inherited" in expected else None)
+
+
+class FakeGH:
+    token = "t"
+
+    def __init__(self):
+        self.calls = []
+
+    def find_check(self, repo, sha, name):
+        self.calls.append(("find", repo))
+        return 7 if repo == "o/lib-musl" else None
+
+    def put_check(self, repo, body, check_id=None):
+        self.calls.append(("put", repo, check_id))
+        return 1
+
+
+def test_the_cycle_run_finishes_every_members_check():
+    gh = FakeGH()
+    plan = Plan(
+        root="o/unikraft#1",
+        root_repo="o/unikraft",
+        root_head_sha="a",
+        run_url="u",
+        cycle=[
+            CycleMember(ref="o/unikraft#1", repo="o/unikraft", head_sha="a"),
+            CycleMember(ref="o/lib-musl#2", repo="o/lib-musl", head_sha="b"),
+            CycleMember(ref="o/lib-lwip#3", repo="o/lib-lwip", head_sha="c"),
+        ],
+    )
+    assert checks.post(gh, plan, status="completed", title="t", summary="s", conclusion="success", check_id=5) == 1
+    assert gh.calls == [
+        ("put", "o/unikraft", 5),  # the root: by id
+        ("find", "o/lib-musl"),
+        ("put", "o/lib-musl", 7),  # existing check: updated
+        ("find", "o/lib-lwip"),
+        ("put", "o/lib-lwip", None),
+    ]  # none yet: created
+
+
+def test_a_delegating_run_only_touches_its_own_check():
+    gh = FakeGH()
+    plan = Plan(
+        root="o/lib-musl#2",
+        root_repo="o/lib-musl",
+        root_head_sha="b",
+        delegate_to="o/unikraft#1",
+        cycle=[
+            CycleMember(ref="o/unikraft#1", repo="o/unikraft", head_sha="a"),
+            CycleMember(ref="o/lib-musl#2", repo="o/lib-musl", head_sha="b"),
+        ],
+    )
+    checks.post(gh, plan, status="in_progress", title="t", summary="s")
+    assert gh.calls == [("put", "o/lib-musl", None)]
+
+
+def test_nightly_reports_only_changes():
+    prev = {"a gcc q": "PASS", "b gcc q": "FAIL", "c gcc q": "FAIL", "d gcc q": "PASS"}
+    broke, fixed = notify.changes(
+        prev,
+        [
+            v("a", "q", "FAIL", reason="boom"),
+            v("b", "q", "PASS"),
+            v("c", "q", "FAIL"),
+            v("d", "q", "FLAKY"),
+            v("e", "q", "FAIL"),
+        ],
+    )
+    assert broke == ["a gcc q: boom"]  # e is new, d flaky counts as passing, c is unchanged
+    assert fixed == ["b gcc q"]

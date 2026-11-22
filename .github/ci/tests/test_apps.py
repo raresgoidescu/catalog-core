@@ -48,7 +48,9 @@ class TempCatalog(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def add_app(self, name, setup=SETUP, all_sh=ALL, exe=True, builds=("qemu.x86_64", "fc.arm64"), runs=("qemu.x86_64",)):
+    def add_app(
+        self, name, setup=SETUP, all_sh=ALL, exe=True, builds=("qemu.x86_64", "fc.arm64"), runs=("qemu.x86_64",)
+    ):
         write(f"{self.root}/{name}/setup.sh", setup)
         if all_sh is not None:
             write(f"{self.root}/{name}/.scripts/test/all.sh", all_sh, exe=exe)
@@ -81,7 +83,7 @@ class DiscoverTest(TempCatalog):
         self.assertIn(".scripts/test/all.sh is not executable", a.problems)
 
     def test_unparseable_symlink_call_is_reported(self):
-        self.add_app("x", setup=SETUP + 'check_exists_and_create_symlink libs/lwip\n')
+        self.add_app("x", setup=SETUP + "check_exists_and_create_symlink libs/lwip\n")
         [a] = apps.discover(self.root)
         self.assertTrue(any("not of the form" in p for p in a.problems))
 
@@ -102,11 +104,12 @@ class DiscoverTest(TempCatalog):
         self.assertTrue(any("vendor/foo" in p for p in a.problems))
 
     def test_affected(self):
-        self.add_app("a")                                   # unikraft + musl
+        self.add_app("a")  # unikraft + musl
         self.add_app("b", setup='check_exists_and_create_symlink "unikraft"\n')
-        self.add_app("c", all_sh=None)                      # no tests: never selected
+        self.add_app("c", all_sh=None)  # no tests: never selected
         found = apps.discover(self.root)
-        names = lambda changed: [a.name for a in apps.affected(found, changed)]
+        def names(changed):
+            return [a.name for a in apps.affected(found, changed)]
         self.assertEqual(names(["libs/musl"]), ["a"])
         self.assertEqual(names(["unikraft"]), ["a", "b"])
         self.assertEqual(names(["libs/lwip"]), [])
@@ -114,11 +117,15 @@ class DiscoverTest(TempCatalog):
 
 class ReposTest(unittest.TestCase):
     def test_round_trip(self):
-        for path, name in [("unikraft", "unikraft"), ("libs/musl", "lib-musl"),
-                           ("libs/compiler-rt", "lib-compiler-rt"), ("apps/elfloader", "app-elfloader")]:
+        for path, name in [
+            ("unikraft", "unikraft"),
+            ("libs/musl", "lib-musl"),
+            ("libs/compiler-rt", "lib-compiler-rt"),
+            ("apps/elfloader", "app-elfloader"),
+        ]:
             self.assertEqual(repos.repo_name_for(path), name)
             self.assertEqual(repos.path_for(f"unikraft/{name}"), path)
-            self.assertEqual(repos.path_for(f"someone/{name}"), path)   # forks map to the same path
+            self.assertEqual(repos.path_for(f"someone/{name}"), path)  # forks map to the same path
 
     def test_rejects_unknown(self):
         for bad in ["catalog-core", "unikraft/catalog-core", "foo/bar"]:

@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>catalog-core CI</title>
+<style>
+:root{--bg:#fff;--fg:#1f2328;--muted:#59636e;--line:#d1d9e0;--PASS:#1a7f37;--REGRESSION:#cf222e;--FAIL:#cf222e;--FLAKY:#bf8700;--BROKEN_ON_BASE:#8c959f;--INFRA:#8250df;--none:#eaeef2}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--line:#30363d;--PASS:#3fb950;--REGRESSION:#f85149;--FAIL:#f85149;--FLAKY:#d29922;--BROKEN_ON_BASE:#6e7681;--INFRA:#a371f7;--none:#21262d}}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;margin:0 auto;padding:24px 16px;max-width:1200px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:28px 0 8px}.m{color:var(--muted);margin:0 0 16px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:12px}td.c{padding:2px}
+.dot{display:block;width:12px;height:12px;border-radius:3px;background:var(--none)}
+{% for k in name %}.{{ k }}{background:var(--{{ k }})}{% endfor %}
+.legend span{display:inline-flex;align-items:center;gap:4px;margin-right:12px;color:var(--muted)}
+a{color:inherit}
+</style>
+
+<h1>catalog-core CI</h1>
+<p class="m">{{ n_runs }} recorded runs · from the <code>ci-data</code> branch</p>
+<div class="legend">{% for k, (one, many) in name.items() if k != "FAIL" %}<span><i class="dot {{ k }}"></i>{{ icon[k] }} {{ one }}</span>{% endfor %}</div>
+
+{% macro grid(g, label) %}
+<h2>{{ label }}</h2>
+{% if not g.runs %}<p class="m">No scheduled runs recorded yet.</p>{% else %}
+<div class="scroll"><table>
+<tr><th>app</th><th>compiler</th><th>variant</th>{% for r in g.runs %}<th><a href="{{ r.run_url }}" title="{{ r.time }}">{{ r.time[5:10] }}</a></th>{% endfor %}</tr>
+{% for row in g.rows %}
+<tr><td>{{ row.config[0] }}</td><td>{{ row.config[1] }}</td><td>{{ row.config[2] }}</td>
+{% for m in row.marks %}<td class="c"><span class="dot {{ m.verdict if m else '' }}" title="{{ m.tip if m else 'not run' }}"></span></td>{% endfor %}</tr>
+{% endfor %}
+</table></div>{% endif %}
+{% endmacro %}
+
+{{ grid(staging, "Nightly: staging") }}
+{{ grid(stable, "Weekly: stable") }}
+
+<h2>Pull requests</h2>
+{% if not prs %}<p class="m">No PR runs recorded yet.</p>{% else %}
+<div class="scroll"><table>
+<tr><th>time (UTC)</th><th>PR</th><th>tested with</th><th>result</th><th>test minutes</th></tr>
+{% for r in prs %}
+<tr><td>{{ r.time[:16] | replace("T", " ") }}</td>
+<td><a href="https://github.com/{{ r.root | replace('#', '/pull/') }}">{{ r.root }}</a></td>
+<td>{{ r.prs | rejectattr("ref", "equalto", r.root) | selectattr("used") | map(attribute="ref") | join(", ") or "–" }}</td>
+<td><a href="{{ r.run_url }}">{{ r.title }}</a></td><td>{{ "%.0f" | format(r.minutes) }}</td></tr>
+{% endfor %}
+</table></div>{% endif %}
+
+<h2>Flaky configurations</h2>
+{% if not flaky %}<p class="m">No flaky results in the last 200 runs.</p>{% else %}
+<div class="scroll"><table><tr><th>configuration</th><th>flaky / runs</th><th>rate</th></tr>
+{% for rate, f, t, k in flaky %}<tr><td>{{ k }}</td><td>{{ f }}/{{ t }}</td><td>{{ "%.0f%%" | format(rate * 100) }}</td></tr>{% endfor %}
+</table></div>{% endif %}

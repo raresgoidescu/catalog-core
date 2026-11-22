@@ -42,3 +42,8 @@ out/
 # Test output files
 log.build.*
 log.run.*
+.github/ci/.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

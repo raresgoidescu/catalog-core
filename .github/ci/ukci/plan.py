@@ -1,10 +1,7 @@
-"""Turn a GitHub event into plan.json: what to test, at which commits, and why.
+"""Turn a GitHub event into a Plan: what to test, at which commits, and why.
 
-Runs in the trusted plan job. It reads the GitHub API and parses (never
-executes) the app directories. Output:
-
-  plan.json            everything later jobs need, plus explanations
-  $GITHUB_OUTPUT       cells (matrix), trusted, ok, catalog_sha, ...
+Runs in the trusted plan job: it reads the GitHub API and parses (never
+executes) the app directories.
 """
 
 from __future__ import annotations
@@ -13,290 +10,318 @@ import hashlib
 import json
 import os
 import re
-import subprocess
 import tempfile
+from dataclasses import dataclass, field
 
 from . import apps as apps_mod
-from . import combine
-from . import repos
-from .gh import GitHub
-from .resolve import CATALOG, Ref, resolve
+from . import git, repos
+from .github import GitHub
+from .models import CatalogRef, Cell, CycleMember, LockEntry, Part, Plan, PlannedPR, PullRequest
+from .resolve import CATALOG, Found, Resolution, path_of, resolve
 
-SLUG_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-# Legacy per-repo dispatch event types still sent by older callers.
+SLUG_RE = re.compile(r"^[\w.-]+/[\w.-]+$")
+# Sent by the per-repo dispatchers that are still upstream; same payload shape.
 LEGACY_TYPES = {"unikraft_open_pr", "musl_open_pr", "lwip_open_pr", "libelf_open_pr", "elfloader_open_pr"}
 
 
-def env(name: str, default: str) -> str:
-    """Environment setting; unset repository variables arrive as ''."""
-    return os.environ.get(name) or default
+def _env(name: str, default: str) -> str:
+    return os.environ.get(name) or default  # unset repository variables arrive as ''
 
 
-def env_list(name: str, default: str) -> list[str]:
-    return [x.strip() for x in env(name, default).split(",") if x.strip()]
+def _list(value: str) -> list[str]:
+    return [x.strip() for x in value.split(",") if x.strip()]
 
 
-class Planner:
-    def __init__(self, gh: GitHub, *, repository: str, sha: str, upstream_org: str = repos.UPSTREAM_ORG):
-        self.gh = gh
-        self.repository = repository             # catalog-core repo running CI, "owner/catalog-core"
-        self.sha = sha                           # catalog-core commit the workflow runs from
-        self.upstream_org = upstream_org
-        self._branch_cache: dict[tuple[str, str], str] = {}
+@dataclass
+class Settings:
+    """CI policy, from repository variables (see .github/ci/README.md)."""
 
-    def branch_sha(self, repo: str, branch: str) -> str:
-        key = (repo, branch)
-        if key not in self._branch_cache:
-            self._branch_cache[key] = self.gh.branch_sha(repo, branch)
-        return self._branch_cache[key]
+    trusted_associations: set[str] = field(default_factory=lambda: {"OWNER", "MEMBER", "COLLABORATOR"})
+    channels: set[str] = field(default_factory=lambda: {"staging", "stable"})
+    compilers: list[str] = field(default_factory=lambda: ["gcc", "clang"])
+    max_prs: int = 8
+    upstream_org: str = repos.UPSTREAM_ORG
+    stable_schedule: str = ""
 
-    def merge_base_of(self, repo: str, merge_sha: str) -> str:
-        """First parent of GitHub's test merge = the base commit it merged onto."""
-        return self.gh.get(f"/repos/{repo}/commits/{merge_sha}")["parents"][0]["sha"]
-
-    def plan(self, *, root: Ref | None, channel: str | None, only_apps: list[str],
-             compilers: list[str], trusted_associations: set[str], channels: set[str],
-             max_prs: int, catalog_root: str | None = None) -> dict:
-        plan: dict = {"version": 1, "root": str(root) if root else None, "errors": [], "notes": [],
-                      "prs": [], "dropped": [], "untrusted": [], "trusted": True}
-        res = None
-        if root:
-            res = resolve(self.gh, root, allowed_owners={self.upstream_org, self.repository.split("/")[0]},
-                          trusted_associations=trusted_associations, channels=channels, max_prs=max_prs)
-            plan["errors"] += res.errors
-            plan["dropped"] = [{"pr": r, "reason": why} for r, why in res.dropped]
-            plan["untrusted"] = res.untrusted
-            plan["trusted"] = res.trusted
-            selected_ids = {id(f) for f in res.selected.values()} | {id(f) for g in res.combine.values() for f in g}
-            plan["prs"] = [{"pr": f.pr.ref, "url": f.pr.url, "title": f.pr.title, "head_sha": f.pr.head_sha,
-                            "merge_sha": f.pr.merge_sha, "base_ref": f.pr.base_ref, "via": f.via,
-                            "used": id(f) in selected_ids}
-                           for f in res.prs]
-            root_found = next((f for f in res.prs if f.pr.ref.lower() == str(root)), None)
-            if res.root_state in ("merged", "closed"):
-                # The root PR was merged or closed meanwhile (e.g. a late
-                # fan-out from a dependency): nothing to test, nothing to report.
-                plan["errors"] = []
-                plan["root_closed"] = True
-                plan["notes"].append(f"{root} is no longer open; nothing to test")
-                return self._finish(plan, [], {}, {}, None)
-            if root_found is None:
-                return self._finish(plan, [], {}, {}, None)      # resolution errors explain why
-            root_pr = root_found.pr
-            plan["root_head_sha"] = root_pr.head_sha
-            plan["root_repo"] = root_pr.repo
-            channel = root_pr.base_ref if root_pr.repo.split("/")[1] != "catalog-core" else (channel or "staging")
-            # PRs in a cycle with the root resolve to this very set: test it once.
-            cycle = res.cycle()
-            heads = {f.pr.ref.lower(): f.pr for f in res.prs}
-            plan["cycle"] = [{"pr": r, "repo": heads[r].repo, "head_sha": heads[r].head_sha} for r in cycle if r in heads]
-            if len(cycle) > 1 and cycle[0] != str(root) and not plan["errors"]:
-                plan["delegate_to"] = cycle[0]
-                plan["notes"].append(f"{root} and {cycle[0]} depend on each other, so they are tested "
-                                     f"together in the run for {cycle[0]}")
-                plan["channel"] = channel
-                return self._finish(plan, [], {}, {}, None)
-        channel = channel or "staging"
-        plan["channel"] = channel
-        if plan["errors"]:
-            return self._finish(plan, [], {}, {}, None)
-
-        # catalog-core itself: a catalog-core PR in the set provides the apps.
-        catalog_pr = res.selected.get(CATALOG) if res else None
-        catalog_repo = catalog_pr.pr.repo if catalog_pr else self.repository
-        catalog_sha = catalog_pr.pr.merge_sha if catalog_pr else self.sha
-        plan["catalog"] = {"repo": catalog_repo, "sha": catalog_sha,
-                           "from": f"{catalog_pr.pr.ref} merged into {catalog_pr.pr.base_ref}" if catalog_pr else "this workflow's commit"}
-        if catalog_pr:
-            # Without the catalog-core PR: the commit its test merge was made onto.
-            plan["catalog_base"] = {"repo": catalog_repo, "sha": self.merge_base_of(catalog_repo, catalog_sha),
-                                    "from": catalog_pr.pr.base_ref}
-        root_dir = catalog_root or "."
-        tmp = None
-        if catalog_pr:
-            tmp = tempfile.mkdtemp(prefix="catalog-")
-            fetch_commit(f"https://github.com/{catalog_repo}", catalog_sha, tmp)
-            root_dir = tmp
-        found = apps_mod.discover(root_dir)
-
-        # Which apps are affected, and why.
-        dep_paths = [p for p in (res.selected if res else {}) if p != CATALOG]
-        if not root:
-            selected = [a for a in found if a.has_tests]
-            why = {a.name: f"scheduled/manual run on {channel}" for a in selected}
-        else:
-            selected = apps_mod.affected(found, dep_paths)
-            why = {a.name: "links " + ", ".join(p for p in a.repos if p in dep_paths) for a in selected}
-            if catalog_pr:
-                changed = self.catalog_changed_apps(catalog_pr.pr, found)
-                for a in (found if changed is None else [x for x in found if x.name in changed]):
-                    if a.has_tests and a.name not in why:
-                        selected.append(a)
-                        why[a.name] = f"changed by {catalog_pr.pr.ref}" if changed is not None else f"{catalog_pr.pr.ref} changes shared files"
-                selected.sort(key=lambda a: a.name)
-        if only_apps:
-            unknown = sorted(set(only_apps) - {a.name for a in found if a.has_tests})
-            if unknown:
-                plan["errors"].append(f"unknown app(s) or apps without tests: {', '.join(unknown)}")
-            selected = [a for a in selected if a.name in only_apps]
-        plan["untested_apps"] = [a.name for a in found if not a.has_tests]
-
-        # Lock: one commit per repo. base_lock: same, without the PRs.
-        lock, base_lock = {}, {}
-        for path in sorted({p for a in selected for p in a.repos}):
-            f = res.selected.get(path) if res else None
-            if res and path in res.combine:
-                entry = self.combined_entry(res.combine[path], channel, plan["errors"])
-                if entry:
-                    lock[path] = entry
-                    base_lock[path] = {"repo": entry["repo"], "sha": entry["combine"]["base_sha"], "from": channel}
-            elif f:
-                lock[path] = {"repo": f.pr.repo, "sha": f.pr.merge_sha, "pr": f.pr.ref,
-                              "from": f"{f.pr.ref} merged into {f.pr.base_ref}"}
-                base_lock[path] = {"repo": f.pr.repo, "sha": self.merge_base_of(f.pr.repo, f.pr.merge_sha),
-                                   "from": f"{f.pr.base_ref} (the commit {f.pr.ref} was merged onto)"}
-            else:
-                repo = repos.slug_for(path, self.upstream_org)
-                entry = {"repo": repo, "sha": self.branch_sha(repo, channel), "from": channel}
-                lock[path] = entry
-                base_lock[path] = dict(entry)
-
-        if plan["errors"]:
-            return self._finish(plan, [], {}, {}, None)
-        cells = [{"app": a.name, "compiler": c, "why": why[a.name],
-                  "repos": a.repos, "variants": [v.name for v in a.variants]}
-                 for a in selected for c in compilers]
-        return self._finish(plan, cells, lock, base_lock, catalog_sha)
-
-    def combined_entry(self, group, channel: str, errors: list[str]) -> dict | None:
-        """Merge non-stacked PRs of one repo onto the base branch head."""
-        repo = group[0].pr.repo
-        base_sha = self.branch_sha(repo, channel)
-        parts = [combine.Part(f.pr.ref, f.pr.head_sha) for f in group]
-        labels = " + ".join(p.label for p in parts)
-        try:
-            with tempfile.TemporaryDirectory(prefix="combine-") as tmp:
-                sha = combine.build(f"https://github.com/{repo}", base_sha, parts, tmp)
-        except combine.Conflict as e:
-            errors.append(f"{labels} are all required but {e.second} conflicts with {e.first} "
-                          f"(in {', '.join(e.files[:5]) or 'some files'}). CI can't resolve that: rebase "
-                          f"{e.second} on top of the other PR(s) and add a Depends-On between them")
-            return None
-        return {"repo": repo, "sha": sha, "pr": labels,
-                "from": f"{labels} merged together into {channel}",
-                "combine": {"base_sha": base_sha, "parts": [{"label": p.label, "sha": p.sha} for p in parts]}}
-
-    def catalog_changed_apps(self, pr, found) -> set[str] | None:
-        """App names a catalog-core PR touches; None if it touches shared files."""
-        names = {a.name for a in found}
-        changed = set()
-        for f in self.gh.pr_files(pr.repo, pr.number):
-            top = f.split("/", 1)[0]
-            if top in names and "/" in f:
-                changed.add(top)
-            elif not f.endswith(".md"):
-                return None
-        return changed
-
-    def _finish(self, plan, cells, lock, base_lock, catalog_sha) -> dict:
-        plan["cells"] = cells
-        plan["lock"] = lock
-        plan["base_lock"] = base_lock
-        hashed = json.dumps({"lock": lock, "catalog": catalog_sha, "cells": cells}, sort_keys=True)
-        plan["plan_hash"] = hashlib.sha256(hashed.encode()).hexdigest()
-        return plan
+    @classmethod
+    def from_env(cls) -> Settings:
+        return cls(
+            trusted_associations=set(_list(_env("CI_TRUSTED_ASSOCIATIONS", "OWNER,MEMBER,COLLABORATOR"))),
+            channels=set(_list(_env("CI_CHANNELS", "staging,stable"))),
+            compilers=_list(_env("CI_COMPILERS", "gcc,clang")),
+            max_prs=int(_env("CI_MAX_DEP_PRS", "8")),
+            upstream_org=_env("CI_UPSTREAM_ORG", repos.UPSTREAM_ORG),
+            stable_schedule=_env("CI_STABLE_SCHEDULE", ""),
+        )
 
 
-def fetch_commit(url: str, sha: str, dest: str) -> None:
-    """Shallow-fetch exactly one commit into `dest` and check it out."""
-    def git(*args):
-        subprocess.run(["git", *args], check=True, cwd=dest, stdout=subprocess.DEVNULL)
-    os.makedirs(dest, exist_ok=True)
-    git("init", "-q")
-    git("-c", "protocol.version=2", "fetch", "-q", "--no-tags", "--depth", "1", url, sha)
-    git("-c", "advice.detachedHead=false", "checkout", "-q", "FETCH_HEAD")
-
-
-def check_repos(plan: dict) -> str:
-    """Repos (names, under the root's owner) whose PRs get a check from this run:
-    the root and, if this run tests a cycle, every PR in it."""
-    owner, _, name = (plan.get("root_repo") or "/").partition("/")
-    names = {c["repo"].split("/")[1] for c in plan.get("cycle", []) if c["repo"].split("/")[0] == owner}
-    return ",".join(sorted((names | {name}) - {""}))
-
-
-def root_from_event(event_name: str, event: dict, repository: str) -> Ref | None:
+def root_from_event(event_name: str, event: dict, repository: str) -> str | None:
+    """The PR this run is about ("owner/repo#N"), or None for scheduled/manual runs."""
     if event_name == "repository_dispatch":
         payload = event.get("client_payload") or {}
         repo = payload.get("repo") or payload.get("pr_repo")
         number = str(payload.get("number") or payload.get("pr_number") or "")
-        action = event.get("action")
-        if action != "catalog_pr" and action not in LEGACY_TYPES:
-            raise ValueError(f"unexpected dispatch type {action!r}")
+        if event.get("action") != "catalog_pr" and event.get("action") not in LEGACY_TYPES:
+            raise ValueError(f"unexpected dispatch type {event.get('action')!r}")
         if not repo or not SLUG_RE.match(repo) or not number.isdigit():
             raise ValueError(f"invalid dispatch payload: repo={repo!r} number={number!r}")
-        return Ref(repo.lower(), int(number))
-    if event_name in ("pull_request", "pull_request_target"):
-        return Ref(repository.lower(), int(event["number"]))
+        return f"{repo.lower()}#{number}"
+    if event_name == "pull_request":
+        return f"{repository.lower()}#{event['number']}"
     return None
+
+
+class Planner:
+    def __init__(self, gh: GitHub, settings: Settings, *, repository: str, sha: str):
+        self.gh, self.settings = gh, settings
+        self.repository = repository  # the catalog-core repo running CI
+        self.sha = sha  # the catalog-core commit the workflow runs from
+        self._heads: dict[tuple[str, str], str] = {}
+
+    def branch_sha(self, repo: str, branch: str) -> str:
+        if (repo, branch) not in self._heads:
+            self._heads[repo, branch] = self.gh.branch_sha(repo, branch)
+        return self._heads[repo, branch]
+
+    def plan(
+        self,
+        root: str | None,
+        *,
+        channel: str | None = None,
+        only_apps: list[str] | None = None,
+        compilers: list[str] | None = None,
+    ) -> Plan:
+        p = Plan(root=root, channel=channel or "staging")
+        res = self._resolve(p) if root else None
+        if p.errors or p.root_closed or p.delegate_to or (root and res is None):
+            return finish(p)
+
+        # The apps come from catalog-core: this commit, or a catalog-core PR in the set.
+        catalog_pr = res.used[CATALOG][0].pr if res and CATALOG in res.used else None
+        apps_dir = "."
+        if catalog_pr:
+            assert catalog_pr.merge_sha and catalog_pr.merge_base_sha
+            p.catalog = CatalogRef(
+                repo=catalog_pr.repo,
+                sha=catalog_pr.merge_sha,
+                source=f"{catalog_pr.ref} merged into {catalog_pr.base_ref}",
+            )
+            p.catalog_base = CatalogRef(repo=catalog_pr.repo, sha=catalog_pr.merge_base_sha, source=catalog_pr.base_ref)
+            apps_dir = tempfile.mkdtemp(prefix="catalog-")
+            git.fetch_commit(f"https://github.com/{catalog_pr.repo}", catalog_pr.merge_sha, apps_dir)
+        else:
+            p.catalog = CatalogRef(repo=self.repository, sha=self.sha, source="this workflow's commit")
+        found = apps_mod.discover(apps_dir)
+        p.untested_apps = [a.name for a in found if not a.has_tests]
+
+        selected = self._select(res, found, catalog_pr, p.channel)
+        if only_apps:
+            known = {a.name for a in found if a.has_tests}
+            if unknown := sorted(set(only_apps) - known):
+                p.errors.append(f"unknown app(s), or apps without tests: {', '.join(unknown)}")
+            selected = {name: (a, why) for name, (a, why) in selected.items() if name in only_apps}
+
+        for path in sorted({r for a, _ in selected.values() for r in a.repos}):
+            self._pin(p, path, res.used.get(path, []) if res else [])
+        if p.errors:
+            return finish(p)
+        p.cells = [
+            Cell(app=name, compiler=c, why=why, repos=a.repos, variants=[v.name for v in a.variants])
+            for name, (a, why) in sorted(selected.items())
+            for c in (compilers or self.settings.compilers)
+        ]
+        return finish(p)
+
+    def _resolve(self, p: Plan) -> Resolution | None:
+        s = self.settings
+        res = resolve(
+            self.gh,
+            p.root or "",
+            allowed_owners={s.upstream_org, self.repository.split("/")[0]},
+            trusted_associations=s.trusted_associations,
+            channels=s.channels,
+            max_prs=s.max_prs,
+        )
+        if res.root_state in ("merged", "closed"):
+            p.root_closed = True  # e.g. a late fan-out: nothing to test, nothing to report
+            p.notes.append(f"{p.root} is {res.root_state}; nothing to test")
+            return None
+        p.errors += res.errors
+        if res.root_state != "open":
+            return None
+        p.untrusted, p.trusted = res.untrusted, res.trusted
+        root_pr = res.prs[0].pr
+        p.root_repo, p.root_head_sha = root_pr.repo, root_pr.head_sha
+        if path_of(root_pr.repo) != CATALOG:
+            p.channel = root_pr.base_ref
+        used = {f.pr.ref for group in res.used.values() for f in group}
+        p.prs = [
+            PlannedPR(
+                ref=f.pr.ref,
+                url=f.pr.url,
+                title=f.pr.title,
+                head_sha=f.pr.head_sha,
+                base_ref=f.pr.base_ref,
+                via=f.via,
+                used=f.pr.ref in used,
+                note=res.dropped.get(f.pr.ref, ""),
+            )
+            for f in res.prs
+        ]
+        listed = {x.ref for x in p.prs}
+        p.notes += [f"{ref} is not used: {why}" for ref, why in res.dropped.items() if ref not in listed]
+        # PRs in a cycle with the root resolve to this same set: test it once,
+        # in the run of the first of them; the others wait for that run.
+        heads = {f.pr.ref: f.pr for f in res.prs}
+        cycle = res.cycle()
+        p.cycle = [CycleMember(ref=r, repo=heads[r].repo, head_sha=heads[r].head_sha) for r in cycle if r in heads]
+        if len(cycle) > 1 and cycle[0] != p.root and not p.errors:
+            p.delegate_to = cycle[0]
+            p.notes.append(
+                f"{p.root} and {cycle[0]} depend on each other, so they are tested together in the run for {cycle[0]}"
+            )
+        return res
+
+    def _select(
+        self, res: Resolution | None, found: list[apps_mod.App], catalog_pr: PullRequest | None, channel: str
+    ) -> dict[str, tuple[apps_mod.App, str]]:
+        """App name -> (app, why it is tested)."""
+        if res is None:
+            return {a.name: (a, f"scheduled or manual run of {channel}") for a in found if a.has_tests}
+        changed = [path for path in res.used if path != CATALOG]
+        selected = {
+            a.name: (a, "links " + ", ".join(r for r in a.repos if r in changed))
+            for a in apps_mod.affected(found, changed)
+        }
+        if catalog_pr:
+            touched = self._catalog_changes(catalog_pr, found)
+            for a in found:
+                if a.has_tests and a.name not in selected and (touched is None or a.name in touched):
+                    why = f"changed by {catalog_pr.ref}" if touched else f"{catalog_pr.ref} changes shared files"
+                    selected[a.name] = (a, why)
+        return selected
+
+    def _catalog_changes(self, pr: PullRequest, found: list[apps_mod.App]) -> set[str] | None:
+        """Apps a catalog-core PR touches; None if it touches shared files."""
+        names, touched = {a.name for a in found}, set()
+        for f in self.gh.pr_files(pr.repo, pr.number):
+            top = f.split("/", 1)[0]
+            if top in names and "/" in f:
+                touched.add(top)
+            elif not f.endswith(".md"):
+                return None
+        return touched
+
+    def _pin(self, p: Plan, path: str, prs: list[Found]) -> None:
+        """One commit per repo (lock), and the same without the PRs (base_lock)."""
+        if not prs:
+            repo = repos.slug_for(path, self.settings.upstream_org)
+            p.lock[path] = p.base_lock[path] = LockEntry(
+                repo=repo, sha=self.branch_sha(repo, p.channel), source=p.channel
+            )
+            return
+        first = prs[0].pr
+        if len(prs) == 1:
+            assert first.merge_sha and first.merge_base_sha
+            p.lock[path] = LockEntry(
+                repo=first.repo, sha=first.merge_sha, pr=first.ref, source=f"{first.ref} merged into {first.base_ref}"
+            )
+            p.base_lock[path] = LockEntry(repo=first.repo, sha=first.merge_base_sha, source=first.base_ref)
+            return
+        # Several PRs, not stacked: merge them together onto the branch.
+        label = " + ".join(f.pr.ref for f in prs)
+        base_sha = self.branch_sha(first.repo, first.base_ref)
+        parts = [Part(label=f.pr.ref, sha=f.pr.head_sha) for f in prs]
+        try:
+            with tempfile.TemporaryDirectory(prefix="combine-") as tmp:
+                sha = git.combine(f"https://github.com/{first.repo}", base_sha, parts, tmp)
+        except git.Conflict as e:
+            p.errors.append(
+                f"{label} are needed together, but {e.part} conflicts with {' + '.join(e.merged)} "
+                f"in {', '.join(e.files[:5]) or 'some files'}. CI can't resolve that: rebase {e.part} "
+                "onto the other PR and add a Depends-On between them"
+            )
+            return
+        p.lock[path] = LockEntry(
+            repo=first.repo,
+            sha=sha,
+            pr=label,
+            base_sha=base_sha,
+            parts=parts,
+            source=f"{label} merged together into {first.base_ref}",
+        )
+        p.base_lock[path] = LockEntry(repo=first.repo, sha=base_sha, source=first.base_ref)
+
+
+def finish(p: Plan) -> Plan:
+    if p.errors:
+        p.cells, p.lock, p.base_lock = [], {}, {}
+    hashed = json.dumps(
+        {
+            "lock": {k: v.model_dump() for k, v in p.lock.items()},
+            "catalog": p.catalog.sha if p.catalog else None,
+            "cells": [c.model_dump() for c in p.cells],
+        },
+        sort_keys=True,
+    )
+    p.plan_hash = hashlib.sha256(hashed.encode()).hexdigest()
+    return p
+
+
+def outputs(p: Plan, repository: str, sha: str) -> dict[str, str]:
+    """$GITHUB_OUTPUT of the plan job."""
+    owner, _, name = (p.root_repo or "/").partition("/")
+    check_repos = {m.repo.split("/")[1] for m in p.cycle if m.repo.split("/")[0] == owner} | {name}
+    matrix = [{"app": c.app, "compiler": c.compiler} for c in p.cells]
+    return {
+        "ok": str(p.ok).lower(),
+        "trusted": str(p.trusted).lower(),
+        "cells": json.dumps(matrix),
+        "has_cells": str(bool(matrix)).lower(),
+        "catalog_repo": p.catalog.repo if p.catalog else repository,
+        "catalog_sha": p.catalog.sha if p.catalog else sha,
+        "root_repo_owner": owner,
+        "root_repo_name": name,
+        "check_repos": ",".join(sorted(check_repos - {""})),
+    }
 
 
 def main(args) -> int:
     event_name = os.environ["GITHUB_EVENT_NAME"]
     with open(os.environ["GITHUB_EVENT_PATH"]) as f:
         event = json.load(f)
-    repository = os.environ["GITHUB_REPOSITORY"]
+    repository, sha = os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_SHA"]
+    settings = Settings.from_env()
     inputs = event.get("inputs") or {}
-
-    planner = Planner(GitHub(), repository=repository, sha=os.environ["GITHUB_SHA"],
-                      upstream_org=env("CI_UPSTREAM_ORG", repos.UPSTREAM_ORG))
     try:
         root = root_from_event(event_name, event, repository)
     except ValueError as e:
-        plan = planner._finish({"version": 1, "root": None, "errors": [str(e)], "prs": [], "trusted": False,
-                                "channel": "staging"}, [], {}, {}, None)
+        p = finish(Plan(errors=[str(e)], trusted=False))
     else:
-        channel = inputs.get("channel") or None
+        channel = inputs.get("channel")
         if event_name == "schedule":
-            channel = "stable" if event.get("schedule") == env("CI_STABLE_SCHEDULE", "") else "staging"
-        plan = planner.plan(
-            root=root,
+            channel = "stable" if event.get("schedule") == settings.stable_schedule else "staging"
+        p = Planner(GitHub(), settings, repository=repository, sha=sha).plan(
+            root,
             channel=channel,
-            only_apps=[a for a in (inputs.get("apps") or "").replace(" ", "").split(",") if a],
-            compilers=[c for c in (inputs.get("compilers") or ",".join(env_list("CI_COMPILERS", "gcc,clang"))).split(",") if c],
-            trusted_associations=set(env_list("CI_TRUSTED_ASSOCIATIONS", "OWNER,MEMBER,COLLABORATOR")),
-            channels=set(env_list("CI_CHANNELS", "staging,stable")),
-            max_prs=int(env("CI_MAX_DEP_PRS", "8")),
+            only_apps=_list(inputs.get("apps") or ""),
+            compilers=_list(inputs.get("compilers") or "") or None,
         )
-    plan["event"] = event_name
-    plan["fan_out"] = (event_name == "repository_dispatch"
-                       and str((event.get("client_payload") or {}).get("cascade", "true")).lower() != "false")
-    plan["run_url"] = f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{repository}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '0')}"
+    p.event = event_name
+    p.fan_out = (
+        event_name == "repository_dispatch"
+        and str((event.get("client_payload") or {}).get("cascade", "true")).lower() != "false"
+    )
+    p.run_url = (
+        f"{_env('GITHUB_SERVER_URL', 'https://github.com')}/{repository}/actions/runs/{_env('GITHUB_RUN_ID', '0')}"
+    )
 
     with open(args.out, "w") as f:
-        json.dump(plan, f, indent=2)
-
-    ok = not plan["errors"]
-    matrix = [{"app": c["app"], "compiler": c["compiler"]} for c in plan["cells"]] if ok else []
-    outputs = {
-        "ok": str(ok).lower(),
-        "trusted": str(plan["trusted"]).lower(),
-        "cells": json.dumps(matrix),
-        "has_cells": str(bool(matrix)).lower(),
-        "catalog_repo": (plan.get("catalog") or {}).get("repo", repository),
-        "catalog_sha": (plan.get("catalog") or {}).get("sha", os.environ["GITHUB_SHA"]),
-        "root_repo": plan.get("root_repo", ""),
-        "root_repo_owner": (plan.get("root_repo") or "/").split("/")[0],
-        "root_repo_name": (plan.get("root_repo") or "/").split("/")[1],
-        "check_repos": check_repos(plan),
-        "root_head_sha": plan.get("root_head_sha", ""),
-    }
-    if os.environ.get("GITHUB_OUTPUT"):
-        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-            for k, v in outputs.items():
-                f.write(f"{k}={v}\n")
-    for e in plan["errors"]:
-        print(f"::error::{e}")
-    print(json.dumps({k: plan[k] for k in ("root", "channel", "trusted", "plan_hash")}, indent=2))
-    print(f"{len(matrix)} cells: {', '.join(sorted({c['app'] for c in plan['cells']}))}")
+        f.write(p.model_dump_json(indent=2))
+    if path := os.environ.get("GITHUB_OUTPUT"):
+        with open(path, "a") as f:
+            f.writelines(f"{k}={v}\n" for k, v in outputs(p, repository, sha).items())
+    for err in p.errors:
+        print(f"::error::{err}")
+    print(f"{p.root or p.channel}: {p.n_configs} configurations in {len(p.cells)} jobs, plan {p.plan_hash[:10]}")
     return 0
