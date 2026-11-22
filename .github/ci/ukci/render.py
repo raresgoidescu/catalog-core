@@ -196,11 +196,15 @@ def check(
 
 def reused(plan: Plan) -> str:
     assert plan.reused
-    note = (
+    lines = []
+    for note in plan.notes:
+        if cell(note) not in plan.reused.summary:
+            lines.append(f"> {cell(note)}")
+    lines.append(
         f"> These exact commits were already tested in [this run]({plan.reused.run_url}); its result is "
-        "shown below. Comment `recheck` to run the tests again.\n\n"
+        "shown below. Comment `recheck` to run the tests again."
     )
-    return note + plan.reused.summary
+    return "\n".join(lines) + "\n\n" + plan.reused.summary
 
 
 TEMPLATES = jinja2.Environment(

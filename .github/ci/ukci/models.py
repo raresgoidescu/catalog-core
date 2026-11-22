@@ -98,6 +98,7 @@ class Plan(Model):
     notes: list[str] = []
     skip: str = ""
     fan_out: bool = False
+    then: list[str] = []
     prs: list[PlannedPR] = []
     catalog: CatalogRef | None = None
     catalog_base: CatalogRef | None = None

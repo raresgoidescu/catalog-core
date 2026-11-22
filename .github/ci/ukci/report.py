@@ -11,7 +11,7 @@ from . import notify, render, verdict
 from .data import Store
 from .github import GitHub, GitHubError
 from .models import Plan, Report, Result
-from .plan import Settings, schedule_channel
+from .plan import Planner, Settings, Trigger, schedule_channel
 
 CHECK = "Catalog Core"
 WORKFLOW = "catalog-test.yml"
@@ -108,20 +108,40 @@ def open_store(token: str | None) -> Store | None:
         return None
 
 
+def same_plans(planner: Planner, refs: list[str]) -> list[list[str]]:
+    groups: dict[str, list[str]] = {}
+    for ref in refs:
+        key = ref
+        try:
+            p = planner.plan(Plan(), Trigger(ref))
+            if p.cells and not p.errors:
+                key = p.plan_hash
+        except Exception as e:
+            print(f"::warning::could not plan {ref}: {str(e)[:300]}")
+        groups.setdefault(key, []).append(ref)
+    return list(groups.values())
+
+
 def cmd_fan_out(args) -> int:
     plan = load_plan(args.plan)
-    if not plan.fan_out or not plan.root or plan.skip:
+    if not plan.root or plan.skip:
         return 0
-    store = open_store(None)
-    if store is None:
-        return 1
-    gh = GitHub()
     here = os.environ["GITHUB_REPOSITORY"]
     branch = os.environ["GITHUB_REF_NAME"]
-    for ref in store.dependents(plan.root):
-        repo, _, number = ref.partition("#")
-        print(f"{plan.root} changed: re-testing {ref}, which was tested together with it")
-        gh.run_workflow(here, WORKFLOW, branch, {"repo": repo, "number": number, "cascade": "false"})
+    gh = GitHub()
+    groups = [[ref] for ref in plan.then]
+    if plan.fan_out:
+        store = open_store(None)
+        if store is None:
+            return 1
+        dependents = [ref for ref in store.dependents(plan.root) if ref not in plan.then]
+        planner = Planner(gh, Settings.from_env(), here, os.environ["GITHUB_SHA"])
+        groups += same_plans(planner, dependents)
+    for first, *rest in groups:
+        repo, _, number = first.partition("#")
+        inputs = {"repo": repo, "number": number, "cascade": "false", "then": ",".join(rest)}
+        print(f"{plan.root} changed: re-testing {first}, then {', '.join(rest) or 'nothing else'}")
+        gh.run_workflow(here, WORKFLOW, branch, inputs)
     return 0
 
 

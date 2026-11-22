@@ -17,6 +17,7 @@ from .resolve import CATALOG, Found, Resolution, resolve
 from .run import COMPILERS
 
 SLUG_RE = re.compile(r"^[\w.-]+/[\w.-]+$")
+REF_RE = re.compile(r"^[\w.-]+/[\w.-]+#\d+$")
 CHANNELS = ("staging", "stable")
 APPROVAL_ENVIRONMENT = "ci-needs-approval"
 
@@ -50,6 +51,7 @@ class Trigger:
     root: str | None
     comment_id: int | None = None
     fan_out: bool = False
+    then: tuple[str, ...] = ()
 
 
 class BadEvent(ValueError):
@@ -73,7 +75,11 @@ def trigger(event_name: str, event: dict, repository: str) -> Trigger:
         raise BadEvent(f"invalid inputs: comment={comment!r}")
     comment_id = int(comment) if comment else None
     fan_out = str(inputs.get("cascade") or "true").lower() != "false"
-    return Trigger(f"{repo.lower()}#{number}", comment_id, fan_out)
+    then = split_list(str(inputs.get("then") or ""))
+    for ref in then:
+        if not REF_RE.match(ref):
+            raise BadEvent(f"invalid inputs: then={ref!r}")
+    return Trigger(f"{repo.lower()}#{number}", comment_id, fan_out, tuple(ref.lower() for ref in then))
 
 
 def schedule_channel(event: dict, settings: Settings) -> str:
@@ -107,6 +113,7 @@ class Planner:
         p.channel = channel
         p.recheck = t.comment_id is not None
         p.fan_out = t.fan_out
+        p.then = list(t.then)
         if channel not in CHANNELS:
             p.errors.append(f"unknown channel {channel!r}; one of {', '.join(CHANNELS)}")
         unknown_compilers = sorted(set(compilers or []) - set(COMPILERS))
@@ -354,7 +361,7 @@ def outputs(p: Plan, repository: str, sha: str) -> dict[str, str]:
     return {
         "run": str(run).lower(),
         "environment": "" if p.trusted else APPROVAL_ENVIRONMENT,
-        "fan_out": str(p.fan_out and bool(p.root) and not p.skip).lower(),
+        "fan_out": str((p.fan_out or bool(p.then)) and bool(p.root) and not p.skip).lower(),
         "cells": json.dumps(cells),
         "catalog_repo": p.catalog.repo if p.catalog else repository,
         "catalog_sha": p.catalog.sha if p.catalog else sha,
