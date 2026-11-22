@@ -49,6 +49,11 @@ class App:
         return asdict(self)
 
 
+def _read(path: str) -> str:
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
 def _parse_variant(name: str) -> tuple[str, str]:
     platform, _, arch = name.partition(".")
     return platform, arch
@@ -57,7 +62,7 @@ def _parse_variant(name: str) -> tuple[str, str]:
 def load_app(root: str, name: str) -> App:
     app = App(name=name)
     setup = os.path.join(root, name, "setup.sh")
-    text = open(setup, encoding="utf-8").read()
+    text = _read(setup)
 
     app.repos = SYMLINK_RE.findall(text)
     if len(SYMLINK_ANY_RE.findall(text)) != len(app.repos):
@@ -77,7 +82,7 @@ def load_app(root: str, name: str) -> App:
     if os.path.isfile(test):
         if not os.access(test, os.X_OK):
             app.problems.append(f"{TEST_SCRIPT} is not executable")
-        ttext = open(test, encoding="utf-8").read()
+        ttext = _read(test)
         found = VARIANT_RE.findall(ttext)
         if len(VARIANT_ANY_RE.findall(ttext)) != len(found):
             app.problems.append(

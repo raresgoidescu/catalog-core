@@ -68,6 +68,32 @@ def main(argv=None) -> int:
     p = sub.add_parser("lint", help="check every app can be understood by CI")
     p.set_defaults(func=cmd_lint)
 
+    from . import plan as plan_mod, report, run as run_mod
+
+    p = sub.add_parser("plan", help="(CI) turn the GitHub event into plan.json")
+    p.add_argument("--out", default="plan.json")
+    p.set_defaults(func=plan_mod.main)
+
+    p = sub.add_parser("check-start", help="(CI) post the in-progress Catalog Core check")
+    p.add_argument("--plan", default="plan.json")
+    p.set_defaults(func=report.cmd_start)
+
+    p = sub.add_parser("run", help="run one app/compiler from a plan (also works locally)")
+    p.add_argument("--plan", default="plan.json")
+    p.add_argument("--app", required=True)
+    p.add_argument("--compiler", required=True)
+    p.add_argument("--variants", default="", help="comma-separated subset, e.g. qemu.x86_64")
+    p.add_argument("--out", default="results")
+    p.add_argument("--no-recheck", action="store_true", help="skip retry and base comparison")
+    p.set_defaults(func=run_mod.main)
+
+    p = sub.add_parser("report", help="(CI) judge results, finish the check, write the summary")
+    p.add_argument("--plan", default="plan.json")
+    p.add_argument("--results", default="results")
+    p.add_argument("--out", default="verdicts.json")
+    p.add_argument("--check-id", default="")
+    p.set_defaults(func=report.cmd_finish)
+
     args = ap.parse_args(argv)
     return args.func(args)
 
