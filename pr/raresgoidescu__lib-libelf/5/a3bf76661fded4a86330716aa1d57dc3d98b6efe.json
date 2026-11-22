@@ -1,14 +1,14 @@
 {
  "conclusion": "failure",
- "plan_hash": "64072ac6f233b2968fbe18073b8d078dea5cca0e2ed5647d47d058f058f6175d",
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45021431450",
+ "plan_hash": "2c6ce836c5bfe0243deb546055be911ef474979c02e34fa53dd4681d6e5633e8",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45023609179",
  "verdicts": [
   {
    "app": "bincompat-c-hello",
    "compiler": "gcc",
    "detail": "passes on staging without the PRs",
    "inherited_from": null,
-   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
@@ -17,7 +17,7 @@
    "compiler": "gcc",
    "detail": "passes on staging without the PRs",
    "inherited_from": null,
-   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
@@ -44,7 +44,7 @@
    "compiler": "gcc",
    "detail": "passes on staging without the PRs",
    "inherited_from": null,
-   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
@@ -53,7 +53,7 @@
    "compiler": "gcc",
    "detail": "passes on staging without the PRs",
    "inherited_from": null,
-   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
@@ -80,7 +80,7 @@
    "compiler": "gcc",
    "detail": "passes on staging without the PRs",
    "inherited_from": null,
-   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "qemu.x86_64",
    "verdict": "REGRESSION"
   },
@@ -89,7 +89,7 @@
    "compiler": "gcc",
    "detail": "passes on staging without the PRs",
    "inherited_from": null,
-   "reason": "libs/libelf/elf.c: #error \"CI scenario C: deliberate build break\"",
+   "reason": "libs/libelf/elf.c: \"CI scenario C: deliberate build break\"",
    "variant": "fc.x86_64",
    "verdict": "REGRESSION"
   },
