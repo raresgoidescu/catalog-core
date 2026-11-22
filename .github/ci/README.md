@@ -51,6 +51,8 @@ retried once on the same code. A failed *build* isn't retried, since builds are
 deterministic, except that download failures count as CI errors. A run
 replaced by a newer push is marked cancelled and isn't counted.
 
+**Re-running.** Comment `recheck` on the PR (members and the PR's author).
+
 **Reproducing locally.**
 
 ```sh
@@ -86,15 +88,36 @@ from any dependency repo (it is identical everywhere) and give the repo the
 
 ## How it works
 
-`.github/workflows/catalog-test.yml` runs three jobs:
+`.github/workflows/catalog-test.yml` runs these jobs:
 
 1. **plan** (trusted, never runs PR code): `ukci plan` resolves `Depends-On`,
-   pins one commit per repo (`lock`), plus the same commits without the PRs
-   (`base_lock`), and picks the apps. → `plan.json`
-2. **test** (one job per app and compiler, no permissions or secrets): `ukci run`
-   runs each variant through the app's own `all.sh`, then retries and
-   re-runs failures on `base_lock`. → `result.json`
-3. **report** (trusted): `ukci report` turns results into verdicts and
-   finishes the check.
+   pins one commit per repo (`lock`) and the same without the PRs
+   (`base_lock`), and picks the apps. Output: `plan.json`. Then `ukci check-start`
+   puts the check on the PR.
+2. **fan-out** (trusted): re-tests the PRs that were tested together with this one.
+3. **test** (one job per app and compiler, no permissions or secrets): `ukci run`
+   runs each variant through the app's own `all.sh`, retries a failed run, and
+   runs failures again without the PRs. Output: `result.json`.
+4. **report** (trusted): `ukci report` turns the results into verdicts, finishes
+   the check, records the run on the `ci-data` branch, and posts to Discord
+   after scheduled runs if something changed.
 
-Code: `.github/ci/ukci/`. Tests: `PYTHONPATH=.github/ci python3 -m unittest discover -s .github/ci/tests -t .github/ci`.
+## Developing
+
+```sh
+cd .github/ci
+uv sync                                    # Python and dependencies, from uv.lock
+uv run pytest                              # tests
+uv run ruff check . && uv run ruff format --check . && uv run mypy
+uv run python -m ukci --root ../.. apps    # what CI reads from the app directories
+```
+
+| module | job |
+|---|---|
+| `models.py` | the data passed between jobs (`plan.json`, `result.json`) |
+| `resolve.py`, `plan.py` | Depends-On, then what to test at which commits |
+| `run.py` | one app and compiler, variant by variant |
+| `verdict.py` | results, then verdicts |
+| `checks.py`, `report.py`, `notify.py` | the check, the job commands, Discord |
+| `render.py`, `templates/` | everything people read |
+| `github.py`, `git.py`, `data.py` | `gh`, git, and the `ci-data` branch |

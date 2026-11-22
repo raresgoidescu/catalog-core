@@ -1,15 +1,18 @@
 name: catalog-core-dispatch
 
-# Reusable workflow called by every dependency repo (unikraft, lib-*, app-*)
-# when a pull request changes. It only tells catalog-core "PR <repo>#<n>
-# changed"; catalog-core re-reads everything else from the GitHub API and
-# never trusts this payload. No PR code is checked out or run here.
+# Reusable workflow called by every dependency repo (unikraft, lib-*, app-*):
+# it tells catalog-core "PR <repo>#<n> changed" when a PR is opened, pushed
+# or edited, and when someone comments `recheck` on it (as in Zuul).
+# catalog-core re-reads everything else from the GitHub API and never trusts
+# this payload. No PR code is checked out or run here.
 #
-# Caller (identical in every repo, .github/workflows/catalog-core.yaml):
+# Caller (identical in every repo, .github/workflows/catalog-core-dispatch.yaml):
 #
 #   on:
 #     pull_request_target:
 #       types: [opened, synchronize, reopened, edited, ready_for_review]
+#     issue_comment:
+#       types: [created]
 #   permissions: {}
 #   jobs:
 #     dispatch:
@@ -27,7 +30,13 @@ permissions: {}
 
 jobs:
   dispatch:
-    if: ${{ !github.event.pull_request.draft }}
+    # A PR event (not a draft), or a `recheck` comment on a PR by a member or the PR's author.
+    if: >-
+      (github.event_name == 'pull_request_target' && !github.event.pull_request.draft) ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
+       github.event.comment.body == 'recheck' &&
+       (contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
+        github.event.comment.user.login == github.event.issue.user.login))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -47,13 +56,8 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
+          NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
         run: |
-          jq -n --arg repo "$REPO" --arg number "$NUMBER" \
-            '{event_type: "catalog_pr", client_payload: {repo: $repo, number: $number}}' |
-          curl -sS --fail-with-body -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${OWNER}/catalog-core/dispatches" \
-            --data @-
+          gh api --method POST "/repos/${OWNER}/catalog-core/dispatches" \
+            -f event_type=catalog_pr -f "client_payload[repo]=${REPO}" -f "client_payload[number]=${NUMBER}"
           echo "Sent catalog_pr for ${REPO}#${NUMBER} to ${OWNER}/catalog-core"
