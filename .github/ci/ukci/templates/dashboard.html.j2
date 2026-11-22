@@ -17,7 +17,7 @@ a{color:inherit}
 </style>
 
 <h1>catalog-core CI</h1>
-<p class="m">{{ n_runs }} recorded runs · from the <code>ci-data</code> branch</p>
+<p class="m">{{ n_runs }} recorded runs · from the <code>ci-data</code> branch{% if n_bad %} · {{ n_bad }} unreadable records skipped{% endif %}</p>
 <div class="legend">{% for k, (one, many) in name.items() if k != "FAIL" %}<span><i class="dot {{ k }}"></i>{{ icon[k] }} {{ one }}</span>{% endfor %}</div>
 
 {% macro grid(g, label) %}
@@ -42,7 +42,7 @@ a{color:inherit}
 {% for r in prs %}
 <tr><td>{{ r.time[:16] | replace("T", " ") }}</td>
 <td><a href="https://github.com/{{ r.root | replace('#', '/pull/') }}">{{ r.root }}</a></td>
-<td>{{ r.prs | rejectattr("ref", "equalto", r.root) | selectattr("used") | map(attribute="ref") | join(", ") or "–" }}</td>
+<td>{{ r.tested_with }}</td>
 <td><a href="{{ r.run_url }}">{{ r.title }}</a></td><td>{{ "%.0f" | format(r.minutes) }}</td></tr>
 {% endfor %}
 </table></div>{% endif %}

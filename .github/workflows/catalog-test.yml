@@ -61,6 +61,8 @@ jobs:
     outputs:
       run: ${{ steps.plan.outputs.run }}
       environment: ${{ steps.plan.outputs.environment }}
+      fan_out: ${{ steps.plan.outputs.fan_out }}
+      digest: ${{ steps.plan.outputs.digest }}
       cells: ${{ steps.plan.outputs.cells }}
       catalog_repo: ${{ steps.plan.outputs.catalog_repo }}
       catalog_sha: ${{ steps.plan.outputs.catalog_sha }}
@@ -118,7 +120,7 @@ jobs:
 
   fan-out:
     needs: plan
-    if: github.event_name == 'repository_dispatch'
+    if: always() && needs.plan.outputs.fan_out == 'true'
     runs-on: *runner
     timeout-minutes: 10
     permissions:
@@ -133,6 +135,7 @@ jobs:
       - name: Re-test dependent PRs
         env:
           GH_TOKEN: ${{ github.token }}
+          PLAN_DIGEST: ${{ needs.plan.outputs.digest }}
         run: $UKCI fan-out --plan plan.json
 
   test:
@@ -211,6 +214,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           CHECK_ID: ${{ needs.plan.outputs.check_id }}
+          PLAN_DIGEST: ${{ needs.plan.outputs.digest }}   # test jobs could replace plan.json
           TEST_RESULT: ${{ needs.test.result }}
           CI_DATA_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

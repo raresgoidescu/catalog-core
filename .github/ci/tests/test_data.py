@@ -114,3 +114,21 @@ def test_an_error_keeps_the_last_known_cells():
 def test_only_the_configured_mention_can_ping():
     assert notify.allowed_mentions("<@&123> <@456>") == {"parse": [], "roles": ["123"], "users": ["456"]}
     assert notify.allowed_mentions("") == {"parse": [], "roles": [], "users": []}
+
+
+def test_the_dashboard_reads_what_ci_records(tmp_path, remote):
+    from ukci import dashboard
+
+    s = store(tmp_path, remote, "s")
+    s.record(
+        plan(event="schedule"),
+        Report(plan_hash="p", conclusion="failure", title="t", verdicts=[v("a", "q", "FAIL")]),
+        [],
+        "",
+    )
+    runs, bad = dashboard.load_runs(str(tmp_path / "s"))
+    assert [(r.root, r.tested_with, r.verdicts[0].verdict) for r in runs] == [("o/unikraft#1", "o/lib-musl#12", "FAIL")]
+    assert bad == 0
+    out = tmp_path / "site"
+    assert dashboard.main(type("A", (), {"data": str(tmp_path / "s"), "out": str(out)})) == 0
+    assert "o/unikraft#1" in (out / "index.html").read_text()

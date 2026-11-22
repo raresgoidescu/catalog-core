@@ -157,6 +157,16 @@ def test_dispatch_payload():
     assert (t.root, t.comment_id, t.fan_out) == ("unikraft/lib-musl#12", 7, False)
 
 
+@pytest.mark.parametrize(
+    ("fan_out", "state", "expected"), [(True, "open", "true"), (False, "open", "false"), (True, "closed", "false")]
+)
+def test_fan_out_only_when_a_pr_changed(fan_out, state, expected):
+    p = planner(FakeAPI(pr("unikraft/lib-musl#12", state=state))).plan(
+        plan_mod.Trigger("unikraft/lib-musl#12", fan_out=fan_out)
+    )
+    assert plan_mod.outputs(p, "x/y", "s")["fan_out"] == expected
+
+
 def test_schedule_channel():
     assert plan_mod.schedule_channel({"schedule": "0 3 * * 0"}, SETTINGS) == "stable"
     assert plan_mod.schedule_channel({"schedule": "0 1 * * *"}, SETTINGS) == "staging"
@@ -198,3 +208,18 @@ def test_untrusted_code_never_runs_without_a_reviewer(env):
 def test_trusted_code_runs_without_an_environment():
     p = planner(FakeAPI(pr("unikraft/lib-musl#12"))).plan(plan_mod.Trigger("unikraft/lib-musl#12"))
     assert p.cells and plan_mod.outputs(p, "x/y", "s")["environment"] == ""
+
+
+def test_trusted_jobs_refuse_a_replaced_plan(tmp_path, monkeypatch):
+    import hashlib
+
+    from ukci import report
+
+    path = tmp_path / "plan.json"
+    path.write_text(plan_mod.Plan(root="o/r#1").model_dump_json())
+    monkeypatch.setenv("PLAN_DIGEST", hashlib.sha256(path.read_bytes()).hexdigest())
+    assert report.load_plan(str(path)).root == "o/r#1"
+    path.write_text(plan_mod.Plan(root="o/r#2").model_dump_json())  # what a test job could do
+    with pytest.raises(report.TamperedPlan):
+        report.load_plan(str(path))
+    assert report.cmd_finish(type("A", (), {"plan": str(path), "check_id": "", "results": "", "out": ""})) == 1

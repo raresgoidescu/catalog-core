@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import glob
+import hashlib
 import json
 import os
 
@@ -17,9 +18,18 @@ from .models import Plan, Report, Result
 CHECK = "Catalog Core"
 
 
+class TamperedPlan(Exception):
+    pass
+
+
 def load_plan(path: str) -> Plan:
-    with open(path) as f:
-        return Plan.model_validate_json(f.read())
+    """plan.json, checked against the plan job's digest (PLAN_DIGEST) when one is given."""
+    with open(path, "rb") as f:
+        raw = f.read()
+    expected = os.environ.get("PLAN_DIGEST")
+    if expected and hashlib.sha256(raw).hexdigest() != expected:
+        raise TamperedPlan(f"{path} is not the plan the plan job wrote")
+    return Plan.model_validate_json(raw)
 
 
 def load_results(directory: str) -> list[Result]:
@@ -151,6 +161,9 @@ def cmd_finish(args) -> int:
     check_id = int(args.check_id) if args.check_id else None
     try:
         plan = load_plan(args.plan)
+    except TamperedPlan as e:
+        print(f"::error::{e}; not reporting anything from this run")
+        return 1
     except (OSError, ValidationError) as e:  # the plan job died before writing a plan
         print(f"::error::no plan: {e}")
         if os.environ.get("GITHUB_EVENT_NAME") == "schedule":

@@ -95,6 +95,7 @@ def failure_reason(log_path: str, phase: str, root: str) -> tuple[str, bool]:
     reason = found or (lines[-1] if lines else f"{phase} failed with no output")
     # Unpacked library sources live in the app's build directory; show them by their own name.
     reason = re.sub(r"\S*?/workdir/build/[^/\s]+/origin/", "", reason).replace("//", "/")
+    reason = reason.replace("error: #error ", "error: ")  # gcc says `#error "x"`, clang `"x"`: one row
     return re.sub(r"(^|\s)repos/", r"\1", reason)[:300], fetch
 
 

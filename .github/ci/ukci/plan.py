@@ -328,6 +328,7 @@ def outputs(p: Plan, repository: str, sha: str) -> dict[str, str]:
     return {
         "run": str(run).lower(),
         "environment": "" if p.trusted else APPROVAL_ENVIRONMENT,
+        "fan_out": str(p.fan_out and bool(p.root) and not p.skip).lower(),
         "cells": json.dumps([{"app": c.app, "compiler": c.compiler} for c in p.cells] if run else []),
         "catalog_repo": p.catalog.repo if p.catalog else repository,
         "catalog_sha": p.catalog.sha if p.catalog else sha,
@@ -368,11 +369,15 @@ def main(args) -> int:
     server = os.environ.get("GITHUB_SERVER_URL") or "https://github.com"
     p.run_url = f"{server}/{repository}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '0')}"
 
+    text = p.model_dump_json(indent=2)
     with open(args.out, "w") as f:
-        f.write(p.model_dump_json(indent=2))
+        f.write(text)
     if path := os.environ.get("GITHUB_OUTPUT"):
+        # The digest lets later jobs check that plan.json is the one written here: jobs
+        # that run PR code share the run's artifact storage and could replace the file.
+        out = outputs(p, repository, sha) | {"digest": hashlib.sha256(text.encode()).hexdigest()}
         with open(path, "a") as f:
-            f.writelines(f"{k}={v}\n" for k, v in outputs(p, repository, sha).items())
+            f.writelines(f"{k}={v}\n" for k, v in out.items())
     for err in p.errors:
         print(f"::error::{err}")
     if p.skip:

@@ -110,6 +110,8 @@ def test_timeout(app):
             "/bin/sh: 1: aarch64-linux-gnu-gcc: command not found",
         ),
         (["make[2]: *** [x] Error 1"], "make[2]: *** [x] Error 1"),
+        (['/w/repos/libs/libelf/elf.c:1:2: error: #error "boom"'], 'libs/libelf/elf.c:1:2: error: "boom"'),  # gcc
+        (['/w/repos/libs/libelf/elf.c:1:2: error: "boom"'], 'libs/libelf/elf.c:1:2: error: "boom"'),  # clang
         (["only noise", "last line"], "last line"),
     ],
 )

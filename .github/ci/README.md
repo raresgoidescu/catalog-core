@@ -107,6 +107,10 @@ couldn't run at all. Flaky results and CI errors don't count as changes.
   repo.
 - The `ci-needs-approval` environment exists and has required reviewers.
   (GitHub creates a missing environment *without* protection on first use.)
+- Actions → "Approval for running fork pull request workflows" is set to
+  *all external contributors*. A pull request to catalog-core itself runs
+  its own version of these workflows, so for those, GitHub's approval is
+  the gate (such runs get no secrets and a read-only token).
 - Pages is enabled with source "GitHub Actions" for the dashboard.
 
 ## How it works
@@ -130,7 +134,9 @@ couldn't run at all. Flaky results and CI errors don't count as changes.
 The test job can write any `result.json` it likes: it runs the PR's code as
 root. What keeps that honest is the approval gate, not the report job; the
 report job only makes sure a bad file can't crash it or inject into the
-check.
+check. Test jobs can also replace the run's artifacts, so the trusted jobs
+accept `plan.json` only if it matches the digest the plan job published as
+a job output.
 
 `ci-data` holds one file per run (`runs/`), the result per exact set of
 commits (`plans/`, for reuse), who was tested with whom (`deps/`, for
