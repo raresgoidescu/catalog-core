@@ -133,3 +133,21 @@ def test_one_error_everywhere_says_all():
     attempts = [attempt(v, **BUILD_FAIL) for v in "ab"] + [attempt(v, "base") for v in "ab"]
     vs = verdict.judge(p, [Result(app="nginx", compiler="gcc", plan_hash="h", attempts=attempts)])
     assert "| **regression** | `x.c: boom` | all 2 |" in render.check(p, vs)
+
+
+def test_a_comparison_that_passes_on_retry_makes_a_regression():
+    pr_runs = [attempt(**RUN_FAIL), attempt(kind="retry", **RUN_FAIL)]
+    base = [attempt(kind="base", **RUN_FAIL), attempt(kind="base_retry")]
+    assert judge(pr_runs + base)["v"][0] == "REGRESSION"
+
+
+def test_a_comparison_that_fails_twice_is_already_broken():
+    pr_runs = [attempt(**RUN_FAIL), attempt(kind="retry", **RUN_FAIL)]
+    base = [attempt(kind="base", **RUN_FAIL), attempt(kind="base_retry", **RUN_FAIL)]
+    assert judge(pr_runs + base)["v"][0] == "BROKEN_ON_BASE"
+
+
+def test_titles_cannot_add_links_or_images():
+    text = render.cell("![x](https://e/x.png) [y](https://e) <img src=x>")
+    assert "<img" not in text and text.count("\\[") == 2
+    assert render.code("error: [-Werror=foo]") == "`error: [-Werror=foo]`"

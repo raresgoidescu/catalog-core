@@ -80,7 +80,7 @@ def test_prose_is_never_a_dependency():
 
 def test_unreadable_target_is_reported():
     refs, errors = parse_depends_on("Depends-On: musl 12", "unikraft/unikraft")
-    assert refs == [] and len(errors) == 2
+    assert refs == [] and len(errors) == 1
 
 
 # --- shapes of the graph ----------------------------------------------------------
@@ -247,3 +247,69 @@ def test_root_state(state, expected):
 def test_missing_root():
     res = run(FakeGitHub())
     assert res.root_state is None and "no such pull request" in res.errors[0]
+
+
+# --- how people write it ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("- Depends-On: lib-musl#12", ["unikraft/lib-musl#12"]),
+        ("* Depends-On: lib-musl#12", ["unikraft/lib-musl#12"]),
+        ("**Depends-On:** lib-musl#12", ["unikraft/lib-musl#12"]),
+        ("**Depends-On**: lib-musl#12", ["unikraft/lib-musl#12"]),
+        ("Depends on #7", ["unikraft/unikraft#7"]),
+        ("- Depends on #1976 and #1975 (stacked).", ["unikraft/unikraft#1976", "unikraft/unikraft#1975"]),
+        ("Depends-On: lib-musl#12 (for the new syscall)", ["unikraft/lib-musl#12"]),
+        ("Depends-On: [musl](https://github.com/unikraft/lib-musl/pull/12)", ["unikraft/lib-musl#12"]),
+        ("Depends-On: https://github.com/unikraft/lib-musl/pull/12/files", ["unikraft/lib-musl#12"]),
+        ("Depends-On: lib-musl#12, unikraft/lib-musl#12", ["unikraft/lib-musl#12"]),
+        ("Depends on [n]: LIBVIRTIO_MMIO [=n]", []),
+        ("This PR depends on #308.", []),
+        ("<!-- Link here any open PRs that this work depends on -->", []),
+    ],
+)
+def test_forms_people_write(text, expected):
+    assert parse_depends_on(text, "unikraft/unikraft") == (expected, [])
+
+
+def test_a_depends_on_line_without_a_pr_is_an_error():
+    refs, errors = parse_depends_on("Depends-On: the musl fix", "unikraft/unikraft")
+    assert refs == [] and "the musl fix" in errors[0]
+
+
+def test_a_dependency_only_mentioned_in_prose_gets_a_note():
+    root = pr("unikraft/unikraft#1", body="This PR depends on #308 and on lib-musl#12.\nDepends-On: lib-musl#12")
+    res = run(FakeGitHub(root, pr("unikraft/lib-musl#12")))
+    assert res.errors == []
+    assert used(res) == {"unikraft": ["unikraft/unikraft#1"], "libs/musl": ["unikraft/lib-musl#12"]}
+    assert len(res.notes) == 1 and "unikraft/unikraft#308" in res.notes[0] and "lib-musl#12" not in res.notes[0]
+
+
+def test_dependencies_of_a_merged_pr_are_not_followed():
+    root = pr("unikraft/unikraft#1", body="Depends-On: lib-musl#5")
+    merged = pr("unikraft/lib-musl#5", state="merged", body="Depends-On: lib-lwip#7")
+    gh = FakeGitHub(root, merged, pr("unikraft/lib-lwip#7", state="closed"))
+    res = run(gh)
+    assert res.errors == [] and "unikraft/lib-musl#5" in res.dropped and gh.fetched == 2
+
+
+def test_merged_dependencies_do_not_count_towards_the_limit():
+    deps = ", ".join(f"lib-musl#{i}" for i in range(100, 110))
+    prs = [pr("unikraft/unikraft#1", body=f"Depends-On: {deps}")]
+    prs += [pr(f"unikraft/lib-musl#{i}", state="merged") for i in range(100, 110)]
+    assert run(FakeGitHub(*prs), max_prs=8).errors == []
+
+
+def test_a_catalog_pr_can_depend_on_a_library_pr():
+    root = pr("unikraft/catalog-core#5", base="main", body="Depends-On: unikraft/lib-musl#12")
+    res = run(FakeGitHub(root, pr("unikraft/lib-musl#12", base="stable")), root="unikraft/catalog-core#5")
+    assert res.errors == [] and res.channel == "stable"
+
+
+def test_a_catalog_pr_with_dependencies_on_different_branches():
+    root = pr("unikraft/catalog-core#5", base="main", body="Depends-On: unikraft/lib-musl#12, unikraft/lib-lwip#3")
+    gh = FakeGitHub(root, pr("unikraft/lib-musl#12"), pr("unikraft/lib-lwip#3", base="stable"))
+    res = run(gh, root="unikraft/catalog-core#5")
+    assert len(res.errors) == 1 and "lib-lwip#3 targets `stable`" in res.errors[0]

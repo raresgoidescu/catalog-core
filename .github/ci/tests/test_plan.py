@@ -138,27 +138,28 @@ def test_bad_manual_inputs(kw, error):
 @pytest.mark.parametrize(
     "event",
     [
-        {"action": "musl_open_pr", "client_payload": {"repo": "unikraft/lib-musl", "number": 1}},
-        {"action": "catalog_pr", "client_payload": {"repo": "a/b/c", "number": 1}},
-        {"action": "catalog_pr", "client_payload": {"repo": "unikraft/lib-musl", "number": "1; rm"}},
-        {"action": "catalog_pr", "client_payload": {"repo": "unikraft/lib-musl", "number": 1, "comment": "x"}},
+        {"inputs": {"repo": "unikraft/lib-musl", "number": ""}},
+        {"inputs": {"repo": "a/b/c", "number": "1"}},
+        {"inputs": {"repo": "unikraft/lib-musl", "number": "1; rm"}},
+        {"inputs": {"repo": "unikraft/lib-musl", "number": "1", "comment": "x"}},
     ],
 )
 def test_malformed_dispatches_are_refused(event):
     with pytest.raises(plan_mod.BadEvent):
-        plan_mod.trigger("repository_dispatch", event, "unikraft/catalog-core")
+        plan_mod.trigger("workflow_dispatch", event, "unikraft/catalog-core")
 
 
-def test_dispatch_payload():
+def test_dispatch_inputs():
     t = plan_mod.trigger(
-        "repository_dispatch",
-        {
-            "action": "catalog_pr",
-            "client_payload": {"repo": "Unikraft/Lib-Musl", "number": "12", "comment": "7", "cascade": "false"},
-        },
+        "workflow_dispatch",
+        {"inputs": {"repo": "Unikraft/Lib-Musl", "number": "12", "comment": "7", "cascade": "false"}},
         "unikraft/catalog-core",
     )
     assert (t.root, t.comment_id, t.fan_out) == ("unikraft/lib-musl#12", 7, False)
+    manual = plan_mod.trigger("workflow_dispatch", {"inputs": {"channel": "stable"}}, "unikraft/catalog-core")
+    assert manual.root is None
+    old = plan_mod.trigger("repository_dispatch", {"client_payload": {"repo": "x/y"}}, "unikraft/catalog-core")
+    assert old.root is None
 
 
 @pytest.mark.parametrize(
@@ -178,11 +179,9 @@ def test_schedule_channel():
 
 def test_a_crash_while_planning_still_produces_a_plan_and_outputs(tmp_path, monkeypatch):
     event = tmp_path / "event.json"
-    event.write_text(
-        json.dumps({"action": "catalog_pr", "client_payload": {"repo": "unikraft/lib-musl", "number": 12}})
-    )
+    event.write_text(json.dumps({"inputs": {"repo": "unikraft/lib-musl", "number": "12"}}))
     out, gh_out = tmp_path / "plan.json", tmp_path / "out"
-    monkeypatch.setenv("GITHUB_EVENT_NAME", "repository_dispatch")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
     monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
     monkeypatch.setenv("GITHUB_REPOSITORY", "unikraft/catalog-core")
     monkeypatch.setenv("GITHUB_SHA", "cc")
@@ -227,3 +226,29 @@ def test_trusted_jobs_refuse_a_replaced_plan(tmp_path, monkeypatch):
     with pytest.raises(report.TamperedPlan):
         report.load_plan(str(path))
     assert report.cmd_finish(type("A", (), {"plan": str(path), "check_id": "", "results": "", "out": ""})) == 1
+
+
+def test_recheck_ignores_case():
+    p = planner(FakeAPI(MUSL, comments={7: comment(body="Recheck", assoc="MEMBER")})).plan(
+        plan_mod.Plan(), plan_mod.Trigger("unikraft/lib-musl#12", comment_id=7)
+    )
+    assert not p.skip and p.cells
+
+
+def test_a_dependency_mentioned_in_prose_is_noted_on_the_check():
+    musl = pr("unikraft/lib-musl#12", body="This depends on unikraft/lib-lwip#3.")
+    p = planner(FakeAPI(musl)).plan(plan_mod.Plan(), plan_mod.Trigger("unikraft/lib-musl#12"))
+    assert any("unikraft/lib-lwip#3" in note for note in p.notes) and p.cells
+
+
+def test_a_catalog_pr_takes_the_branch_of_its_dependencies(monkeypatch):
+    from ukci import apps, git
+
+    real = apps.discover
+    monkeypatch.setattr(git, "fetch_commit", lambda url, sha, dest: None)
+    monkeypatch.setattr(apps, "discover", lambda root=".": real(ROOT))
+    cat = pr("unikraft/catalog-core#5", base="main", body="Depends-On: unikraft/lib-musl#12")
+    musl = pr("unikraft/lib-musl#12", base="stable")
+    p = planner(FakeAPI(cat, musl)).plan(plan_mod.Plan(), plan_mod.Trigger("unikraft/catalog-core#5"))
+    assert p.errors == [] and p.channel == "stable"
+    assert p.lock["unikraft"].sha == "unikraft/unikraft@stable"

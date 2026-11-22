@@ -53,9 +53,11 @@ def app(tmp_path):
         write(f"{d}/.scripts/run/{v}", OK)
     loaded = apps.load_app(str(tmp_path), "app")
 
-    def go(variant, timeout=30):
+    def go(variant, timeout=30, run_timeout=30):
         v = next(x for x in loaded.variants if x.name == variant)
-        return run.run_variant(str(d), v, "gcc", "first", timeout_s=timeout, sudo=False, root="/w")
+        return run.run_variant(
+            str(d), v, "gcc", "first", timeout_s=timeout, run_timeout_s=run_timeout, sudo=False, root="/w"
+        )
 
     go.dir = d
     return go
@@ -96,6 +98,19 @@ def test_timeout(app):
     write(f"{app.dir}/.scripts/run/qemu.x86_64", HANG)
     a = app("qemu.x86_64", timeout=2)
     assert (a.build, a.run, a.reason) == ("PASS", "TIMEOUT", "run timed out after 2s")
+
+
+def test_a_hanging_run_stops_at_the_run_timeout(app):
+    write(f"{app.dir}/.scripts/run/qemu.x86_64", HANG)
+    a = app("qemu.x86_64", timeout=60, run_timeout=1)
+    assert (a.build, a.run, a.reason) == ("PASS", "TIMEOUT", "run timed out after 1s")
+    assert a.total_s is not None and a.total_s < 15
+
+
+def test_the_run_timeout_does_not_cut_a_slow_build(app):
+    write(f"{app.dir}/.scripts/build/qemu.x86_64", "#!/bin/sh\nsleep 2\n")
+    a = app("qemu.x86_64", run_timeout=1)
+    assert (a.build, a.run) == ("PASS", "PASS")
 
 
 @pytest.mark.parametrize(
@@ -214,6 +229,7 @@ def test_a_known_scheduled_result_replaces_the_base_run(app, tmp_path, monkeypat
             "no_recheck": False,
             "no_sudo": True,
             "timeout": 30,
+            "run_timeout": 30,
         },
     )
     assert run.main(args) == 0
@@ -236,3 +252,39 @@ def test_a_line_cut_by_parallel_output_is_not_the_reason(tmp_path):
         run.failure_reason(str(log), "build", "/w")[0]
         == "unikraft/plat/ectx.c:50:4: error: instruction requires: fp-armv8"
     )
+
+
+def test_a_failing_comparison_run_is_retried_once(app, tmp_path, monkeypatch):
+    from ukci.models import CatalogRef, Cell, LockEntry, Plan
+
+    write(f"{app.dir}/.scripts/run/qemu.x86_64", "#!/bin/sh\nexit 1\n")
+    plan = Plan(
+        plan_hash="h",
+        catalog=CatalogRef(repo="o/c", sha="c1", source=""),
+        cells=[Cell(app="app", compiler="gcc", why="", repos=["unikraft"], variants=["qemu.x86_64"])],
+        lock={"unikraft": LockEntry(repo="u/unikraft", sha="pr", source="")},
+        base_lock={"unikraft": LockEntry(repo="u/unikraft", sha="base", source="")},
+    )
+    (tmp_path / "plan.json").write_text(plan.model_dump_json())
+    monkeypatch.setattr(run, "checkout", lambda lock, paths, dest: None)
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    args = type(
+        "A",
+        (),
+        {
+            "plan": str(tmp_path / "plan.json"),
+            "app": "app",
+            "compiler": "gcc",
+            "root": str(tmp_path),
+            "variants": "qemu.x86_64",
+            "out": str(tmp_path / "out"),
+            "no_recheck": False,
+            "no_sudo": True,
+            "timeout": 30,
+            "run_timeout": 30,
+        },
+    )
+    assert run.main(args) == 0
+    attempts = (tmp_path / "out" / "result.json").read_text()
+    for kind in ("first", "retry", "base", "base_retry"):
+        assert f'"attempt": "{kind}"' in attempts

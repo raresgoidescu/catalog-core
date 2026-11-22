@@ -120,7 +120,7 @@ def test_a_pr_run_finishes_its_check_and_records_a_reusable_result(env):
     lock = LockEntry(repo="o/lib-musl", sha="pr", source="o/lib-musl#1 merged into staging", pr="o/lib-musl#1")
     p = p.model_copy(
         update={
-            "event": "repository_dispatch",
+            "event": "workflow_dispatch",
             "root": "o/lib-musl#1",
             "root_repo": "o/lib-musl",
             "root_head_sha": "head",
@@ -156,6 +156,6 @@ def _runs(store):
 def test_a_cancelled_run_is_marked_cancelled_and_not_recorded(env, monkeypatch):
     monkeypatch.setenv("TEST_RESULT", "cancelled")
     p, results = nightly("PASS")
-    p = p.model_copy(update={"event": "repository_dispatch", "root": "o/r#1", "root_repo": "o/r", "root_head_sha": "h"})
+    p = p.model_copy(update={"event": "workflow_dispatch", "root": "o/r#1", "root_repo": "o/r", "root_head_sha": "h"})
     code, data = env(p, results)
     assert code == 0 and env.checks[0][1]["conclusion"] == "cancelled" and _runs(data) == []

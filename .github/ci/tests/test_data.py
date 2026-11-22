@@ -80,7 +80,7 @@ def test_only_changes_are_reported():
             v("e", "q", "FAIL"),
         ],
     )
-    assert broke == ["a gcc q: boom"]  # e is new, d flaky counts as passing, c is unchanged
+    assert broke == ["a gcc q: boom", "e gcc q: reason"]  # e is new, d flaky is no change, c is unchanged
     assert fixed == ["b gcc q"]
 
 
@@ -190,3 +190,14 @@ def test_unreadable_scheduled_results_are_ignored(monkeypatch):
 
     monkeypatch.setattr(urllib.request, "urlopen", lambda url, timeout: io.BytesIO(b'{"attempts": [{"variant": 1}]}'))
     assert data.fetch_base("o/c", "base/x.json") == {}
+
+
+def test_the_first_nightly_announces_nothing_as_a_change():
+    assert notify.changes(None, [v("a", "q", "FAIL")]) == ([], [])
+
+
+def test_flaky_after_a_failure_is_not_a_fix():
+    previous = {"cells": {"a gcc q": "FAIL"}}
+    flaky = [v("a", "q", "FLAKY")]
+    assert notify.changes(previous, flaky) == ([], [])
+    assert notify.next_state(previous, flaky, "", "u")["cells"] == {"a gcc q": "FAIL"}
