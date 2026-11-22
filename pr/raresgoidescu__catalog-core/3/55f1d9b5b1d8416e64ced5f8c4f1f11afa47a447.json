@@ -1,0 +1,967 @@
+{
+ "conclusion": "failure",
+ "plan_hash": "7fed1f31cca0f8b210d41bdf5fec5d25325c865a2cc65e1b572449ae8333fa0e",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45014223934",
+ "verdicts": [
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.x86_64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "qemu.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "fc.arm64",
+   "verdict": "FAIL"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "passed",
+   "phase": null,
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "build failed",
+   "phase": "build",
+   "variant": "xen.arm64",
+   "verdict": "FAIL"
+  }
+ ]
+}
