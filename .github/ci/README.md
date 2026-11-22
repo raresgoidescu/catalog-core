@@ -150,10 +150,12 @@ changes.
 4. **fan-out** (trusted): re-tests the PRs that were tested together with
    this one, once (dependents don't fan out further). It runs after the
    report, so a PR that ends up with the same commits reuses this result.
+   Dependents that would test the same commits as each other run once: the
+   first gets the others in `then` and starts them after its report.
 
 Dependency repos start a run with `workflow_dispatch` (inputs `repo`,
-`number`, `comment`, `cascade`); a maintainer can do the same by hand from
-the Actions tab.
+`number`, `comment`, `cascade`, `then`); a maintainer can do the same by
+hand from the Actions tab.
 
 The test job can write any `result.json` it likes: it runs the PR's code as
 root. What keeps that honest is the approval gate, not the report job; the

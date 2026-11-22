@@ -36,6 +36,10 @@ on:
         description: Also re-test the PRs that were tested together with this one
         type: string
         default: 'true'
+      then:
+        description: Comma-separated PRs to re-test after this run (they expect the same commits)
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -205,11 +209,13 @@ jobs:
 
   fan-out:
     needs: [plan, report]
-    if: ${{ !cancelled() && needs.plan.outputs.fan_out == 'true' }}
+    if: always() && needs.plan.outputs.fan_out == 'true'
     runs-on: *runner
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       actions: write
+      contents: read
+      pull-requests: read
     steps:
       - *checkout
       - *uv
@@ -218,4 +224,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PLAN_DIGEST: ${{ needs.plan.outputs.digest }}
+          CI_TRUSTED_ASSOCIATIONS: ${{ vars.CI_TRUSTED_ASSOCIATIONS }}
+          CI_MAX_DEP_PRS: ${{ vars.CI_MAX_DEP_PRS }}
         run: $UKCI fan-out --plan plan.json
