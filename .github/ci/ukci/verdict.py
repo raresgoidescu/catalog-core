@@ -30,6 +30,7 @@ class Verdict:
     verdict: str
     phase: str | None          # "build" | "run" | None
     detail: str
+    inherited_from: str | None = None   # dependency PR whose own run fails the same way
 
 
 def _failed_phase(a: dict) -> str | None:

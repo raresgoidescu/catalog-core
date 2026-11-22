@@ -34,6 +34,9 @@ def title(plan: dict, verdicts: list[V.Verdict]) -> str:
         return "✅ No app uses the changed repositories"
     count = collections.Counter(v.verdict for v in verdicts)
     parts = [f"{count[k]} {LABEL[k]}" for k in V.ORDER if count[k] and k != V.PASS]
+    sources = {v.inherited_from for v in verdicts if v.verdict == V.REGRESSION}
+    if parts and count[V.REGRESSION] and None not in sources:
+        parts[0] += f" (inherited from {', '.join(sorted(sources))})"
     head = ICON[next((k for k in V.ORDER if count[k]), V.PASS)]
     return f"{head} " + (" · ".join(parts + [f"{count[V.PASS]} passed"]) if parts else f"all {count[V.PASS]} passed")
 
@@ -224,6 +227,7 @@ def blame(plan: dict, verdicts: list[V.Verdict], store) -> None:
             if mine and mine.get("verdict") in (V.REGRESSION, V.FAIL):
                 inherited.append(f"[{d['pr']}]({own.get('run_url')})")
         if inherited:
+            v.inherited_from = ", ".join(i.split("]")[0].lstrip("[") for i in inherited)
             v.detail += f"; **inherited**: also fails in the own run of {', '.join(inherited)}"
         elif waiting:
             v.detail += f"; not known yet whether it comes from {', '.join(waiting)} (no own run yet)"

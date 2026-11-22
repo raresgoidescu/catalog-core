@@ -61,6 +61,9 @@ class BlameTest(unittest.TestCase):
     def test_inherited(self):
         own = {"run_url": "r12", "verdicts": [{"app": "nginx", "compiler": "gcc", "variant": "qemu.x86_64", "verdict": "REGRESSION"}]}
         self.assertIn("**inherited**: also fails in the own run of [o/lib-musl#12](r12)", self.detail_with(own))
+        vs = [v("nginx", "qemu.x86_64", V.REGRESSION)]
+        report.blame(self.plan, vs, self.FakeStore(own))
+        self.assertEqual(report.title({"cells": [1]}, vs), "❌ 1 regression (inherited from o/lib-musl#12)")
 
     def test_caused_here(self):
         own = {"run_url": "r12", "verdicts": [{"app": "nginx", "compiler": "gcc", "variant": "qemu.x86_64", "verdict": "PASS"}]}
