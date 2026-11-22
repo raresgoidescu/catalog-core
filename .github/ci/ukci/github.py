@@ -146,8 +146,8 @@ class GitHub:
             return self.api(f"/repos/{repo}/check-runs/{check_id}", "PATCH", body)["id"]
         return self.api(f"/repos/{repo}/check-runs", "POST", body)["id"]
 
-    def dispatch(self, repo: str, event_type: str, payload: dict) -> None:
-        self.api(f"/repos/{repo}/dispatches", "POST", {"event_type": event_type, "client_payload": payload})
+    def run_workflow(self, repo: str, workflow: str, ref: str, inputs: dict[str, str]) -> None:
+        self.api(f"/repos/{repo}/actions/workflows/{workflow}/dispatches", "POST", {"ref": ref, "inputs": inputs})
 
     def run_approvals(self, repo: str, run_id: str) -> list[dict]:
         return self.api(f"/repos/{repo}/actions/runs/{run_id}/approvals") or []

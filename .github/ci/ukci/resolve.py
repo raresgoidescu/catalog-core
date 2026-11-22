@@ -10,13 +10,14 @@ from .models import PullRequest
 
 CATALOG = "catalog-core"
 
-DEPENDS_RE = re.compile(r"^[ \t]*Depends-On:[ \t]*(.+?)[ \t]*$", re.I | re.M)
-TARGET_RES = [
-    re.compile(r"^https://github\.com/(?P<owner>[\w.-]+)/(?P<repo>[\w.-]+)/pull/(?P<n>\d+)/?$"),
-    re.compile(r"^(?P<owner>[\w.-]+)/(?P<repo>[\w.-]+)#(?P<n>\d+)$"),
-    re.compile(r"^(?P<repo>[\w.-]+)#(?P<n>\d+)$"),
-    re.compile(r"^#(?P<n>\d+)$"),
-]
+DEPENDS_RE = re.compile(
+    r"^[ \t]*(?:[-*+][ \t]+)?[*_]*Depends[ -]On\b(?P<marks>[*_:]*)[ \t]*(?P<rest>.*?)[ \t]*$", re.I | re.M
+)
+PROSE_RE = re.compile(r"\bdepends\s+on\b(?P<rest>.*)$", re.I | re.M)
+TARGET_RE = re.compile(
+    r"https://github\.com/(?P<url_owner>[\w.-]+)/(?P<url_repo>[\w.-]+)/pull/(?P<url_n>\d+)"
+    r"|(?<![\w/.-])(?:(?P<owner>[\w.-]+)/)?(?P<repo>[\w.-]+)?#(?P<n>\d+)\b"
+)
 
 
 class Source(Protocol):
@@ -38,39 +39,51 @@ class Resolution:
     dropped: dict[str, str] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
     untrusted: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
     root_state: str | None = None
+    channel: str | None = None
 
     @property
     def trusted(self) -> bool:
         return not self.untrusted
 
 
-def parse_target(token: str, owner: str, repo: str) -> str | None:
-    for regex in TARGET_RES:
-        m = regex.match(token)
-        if m:
-            groups = m.groupdict()
-            target_owner = (groups.get("owner") or owner).lower()
-            target_repo = (groups.get("repo") or repo).lower()
-            return f"{target_owner}/{target_repo}#{groups['n']}"
-    return None
+def targets(text: str, owner: str, repo: str) -> list[str]:
+    refs: list[str] = []
+    for m in TARGET_RE.finditer(text):
+        if m.group("url_n"):
+            ref = f"{m.group('url_owner')}/{m.group('url_repo')}#{m.group('url_n')}"
+        else:
+            ref = f"{m.group('owner') or owner}/{m.group('repo') or repo}#{m.group('n')}"
+        ref = ref.lower()
+        if ref not in refs:
+            refs.append(ref)
+    return refs
 
 
 def parse_depends_on(text: str, current_repo: str) -> tuple[list[str], list[str]]:
-    refs = []
+    refs: list[str] = []
     errors = []
     owner, repo = current_repo.lower().split("/")
     for line in DEPENDS_RE.finditer(text or ""):
-        for token in re.split(r"[,\s]+", line.group(1)):
-            token = token.strip().rstrip(".;")
-            if not token:
-                continue
-            ref = parse_target(token, owner, repo)
-            if ref is None:
-                errors.append(f"can't read Depends-On target `{token}` (use a PR URL, owner/repo#N, repo#N or #N)")
-            else:
+        found = targets(line.group("rest"), owner, repo)
+        if not found and ":" in line.group("marks"):
+            shown = line.group("rest").replace("`", "'")[:100]
+            errors.append(f"no PR in `Depends-On: {shown}` (use a PR URL, owner/repo#N, repo#N or #N)")
+        for ref in found:
+            if ref not in refs:
                 refs.append(ref)
     return refs, errors
+
+
+def mentioned(text: str, current_repo: str) -> list[str]:
+    owner, repo = current_repo.lower().split("/")
+    refs: list[str] = []
+    for line in PROSE_RE.finditer(text or ""):
+        for ref in targets(line.group("rest"), owner, repo):
+            if ref not in refs:
+                refs.append(ref)
+    return refs
 
 
 def path_of(repo: str) -> str:
@@ -103,38 +116,54 @@ def crawl(gh: Source, res: Resolution, allowed: set[str], max_prs: int) -> list[
             if pr.state != "open":
                 return fetched
         fetched.append(Found(pr, via))
-        if len(fetched) > max_prs:
+        if pr.state != "open":
+            continue
+        if sum(1 for found in fetched if found.pr.state == "open") > max_prs:
             res.errors.append(f"more than {max_prs} PRs depend on each other here; split the change up")
             break
         texts = [("description", pr.body)]
         for i, message in enumerate(pr.commit_messages):
             texts.append((f"commit {i + 1}", message))
+        declared: list[str] = []
         for where, text in texts:
             deps, errors = parse_depends_on(text, pr.repo)
+            declared += deps
             for error in errors:
                 res.errors.append(f"{pr.ref} {where}: {error}")
             for dep in deps:
                 if dep not in seen:
                     seen.add(dep)
                     queue.append((dep, f"Depends-On in {pr.ref} {where}"))
+        missed = [ref for ref in mentioned(pr.body, pr.repo) if ref not in declared and ref != pr.ref]
+        if missed:
+            res.notes.append(
+                f"{pr.ref} says it depends on {', '.join(missed)}, but only lines starting with `Depends-On:` "
+                "count, so it was tested without them"
+            )
     return fetched
 
 
 def check(res: Resolution, fetched: list[Found], trusted_associations: set[str], channels: set[str]) -> None:
-    root_pr = fetched[0].pr
-    if root_pr.base_ref not in channels and path_of(root_pr.repo) != CATALOG:
-        res.errors.append(
-            f"{root_pr.ref} targets `{root_pr.base_ref}`; only PRs to {', '.join(sorted(channels))} are tested"
-        )
+    leader = None
+    for found in fetched:
+        if found.pr.state == "open" and path_of(found.pr.repo) != CATALOG:
+            leader = found.pr
+            break
+    if leader is not None:
+        res.channel = leader.base_ref
+        if leader.base_ref not in channels:
+            res.errors.append(
+                f"{leader.ref} targets `{leader.base_ref}`; only PRs to {', '.join(sorted(channels))} are tested"
+            )
     for found in fetched:
         pr = found.pr
         if pr.state == "merged":
             res.dropped[pr.ref] = "already merged, so its code is in the base branch"
         elif pr.state == "closed":
             res.errors.append(f"{pr.ref} is closed without being merged (from {found.via})")
-        elif path_of(pr.repo) != CATALOG and pr.base_ref != root_pr.base_ref:
+        elif leader is not None and path_of(pr.repo) != CATALOG and pr.base_ref != leader.base_ref:
             res.errors.append(
-                f"{pr.ref} targets `{pr.base_ref}` but {root_pr.ref} targets `{root_pr.base_ref}`; "
+                f"{pr.ref} targets `{pr.base_ref}` but {leader.ref} targets `{leader.base_ref}`; "
                 "PRs tested together must target the same branch"
             )
         else:

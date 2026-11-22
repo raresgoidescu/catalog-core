@@ -20,16 +20,22 @@ Depends-On: lib-lwip#40, #7
 Depends-On: https://github.com/unikraft/unikraft/pull/1745
 ```
 
-`repo#N` is a repo in the same organization, `#N` is the same repo. Only
-lines starting with `Depends-On:` count; "needs #12" in prose doesn't.
-Dependencies are followed transitively; chains, diamonds and PRs that
-depend on each other (A ↔ B) all work.
+`repo#N` is a repo in the same organization, `#N` is the same repo. The
+line may be a list item or bold (`- Depends-On: #7`, `**Depends-On:**
+#7`), and `Depends on #7` at the start of a line counts too. Every PR on
+the line counts; other words on it are ignored. "This needs #12" or "it
+depends on #12" in the middle of a sentence doesn't count, and the check
+says so. Dependencies are followed transitively; chains, diamonds and PRs
+that depend on each other (A ↔ B) all work. The `Depends-On` lines of
+already-merged dependencies are not followed.
 
 - Several PRs **in the same repo**: if they are stacked, CI uses the top
   one; otherwise it merges them together onto the target branch. If they
   conflict, the check names the PRs and files and you rebase one onto the
   other.
-- All PRs must target the same branch (`staging` or `stable`).
+- All PRs must target the same branch (`staging` or `stable`). A
+  catalog-core PR targets `main` and is tested with the dependencies'
+  branch.
 - Already-merged dependencies are skipped. Closed ones are an error.
 - Each PR is tested as GitHub's merge of it into its target branch.
 - When a PR you depend on changes, your PR is tested again.
@@ -48,15 +54,18 @@ against variants, linked to the job logs, then one row per distinct error.
 | passed | | |
 
 How it decides: a failed *run* is retried once, and so is a build that
-failed downloading sources. What still fails is built and run once more
-without your PRs. Only the phase (build or run) is compared, never the
+failed downloading sources. A run that takes longer than 5 minutes counts
+as failed (a build gets 20). What still fails is built and run once more
+without your PRs, and a run that fails there too is retried once. Only the
+phase (build or run) is compared, never the
 error text, because parallel builds print errors in a different order every
 time. When a nightly already ran a configuration on exactly the commits
 your PRs are based on (same toolchain too), its result is the comparison
 and nothing is rebuilt.
 
-**Re-running.** Comment `recheck` on the PR (members and the PR's author).
-Pushing, or editing the description, also re-runs it. If the exact same
+**Re-running.** Comment `recheck` on the PR (members and the PR's author;
+other people's comments are ignored). Pushing, or changing a line of the
+description that mentions dependencies, also re-runs it. If the exact same
 commits were already tested, the check shows that result instead of
 running again; `recheck` always runs.
 
@@ -90,7 +99,9 @@ from any dependency repo (it is identical everywhere) and give the repo the
 **Nightly and weekly.** Every night all apps are tested on `staging`, every
 week on `stable` (the cron lines in `catalog-test.yml`). Discord hears
 about it only when a configuration starts or stops failing, or when the run
-couldn't run at all. Flaky results and CI errors don't count as changes.
+couldn't run at all. A configuration that fails in its first nightly
+counts as starting to fail. Flaky results and CI errors don't count as
+changes.
 
 **Settings** (repository variables and secrets; all variables optional):
 
@@ -100,14 +111,19 @@ couldn't run at all. Flaky results and CI errors don't count as changes.
 | `CI_MAX_DEP_PRS` | `8` | limit on PRs tested together |
 | `DISCORD_WEBHOOK_URL` (secret) | – | nightly notifications; none if unset |
 | `DISCORD_MENTION` | – | e.g. `<@&role-id>`: pinged on new failures, and nothing else can ping |
-| `APP_ID`, `PRIVATE_KEY` (secret) | – | the GitHub App that sends dispatches and writes checks |
+| `APP_ID`, `PRIVATE_KEY` (secret) | – | in catalog-core: the App that writes checks; in dependency repos: the App that starts runs |
 
 **Deploying** (things the workflows rely on):
 
-- The GitHub App has `checks: write` on the dependency repos and `contents:
-  write` on catalog-core (needed for `repository_dispatch`). Protect `main`
-  with a ruleset that the App can't bypass: its key is in every dependency
-  repo.
+- Two GitHub Apps, because the dependency repos' key can be used by anyone
+  who can push a workflow to any of them:
+  - the *dispatch* App, installed on catalog-core only, with `actions:
+    write`. Its `APP_ID` and `PRIVATE_KEY` go in every dependency repo.
+  - the *checks* App, installed on the dependency repos, with `checks:
+    write`. Its `APP_ID` and `PRIVATE_KEY` go in catalog-core only.
+
+  Neither may have `contents: write` on catalog-core. Protect `main` and
+  `ci-data` with rulesets; on `ci-data`, allow only GitHub Actions to push.
 - The `ci-needs-approval` environment exists and has required reviewers.
   (GitHub creates a missing environment *without* protection on first use.)
 - Actions → "Approval for running fork pull request workflows" is set to
@@ -125,14 +141,19 @@ couldn't run at all. Flaky results and CI errors don't count as changes.
    same without the PRs (`base_lock`), and picks the apps. Then `ukci
    check-start` puts the check on the PR. If planning fails, the check says
    so.
-2. **fan-out** (trusted): re-tests the PRs that were tested together with
-   this one, once (dependents don't fan out further).
-3. **test** (one job per app and compiler, no permissions or secrets): `ukci
+2. **test** (one job per app and compiler, no permissions or secrets): `ukci
    run` runs each variant through the app's own `all.sh`, retries, and runs
    failures without the PRs. Output: `result.json`.
-4. **report** (trusted): `ukci report` turns the results into verdicts,
+3. **report** (trusted): `ukci report` turns the results into verdicts,
    finishes the check, records the run on the `ci-data` branch, and tells
    Discord after scheduled runs.
+4. **fan-out** (trusted): re-tests the PRs that were tested together with
+   this one, once (dependents don't fan out further). It runs after the
+   report, so a PR that ends up with the same commits reuses this result.
+
+Dependency repos start a run with `workflow_dispatch` (inputs `repo`,
+`number`, `comment`, `cascade`); a maintainer can do the same by hand from
+the Actions tab.
 
 The test job can write any `result.json` it likes: it runs the PR's code as
 root. What keeps that honest is the approval gate, not the report job; the

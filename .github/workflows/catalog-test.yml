@@ -1,8 +1,6 @@
 name: catalog-test
 
 on:
-  repository_dispatch:
-    types: [catalog_pr]
   pull_request:
     paths-ignore: ['**.md']
   schedule:
@@ -22,15 +20,31 @@ on:
         description: Comma-separated compilers (empty = all)
         type: string
         default: ''
+      repo:
+        description: Test a pull request instead, e.g. unikraft/lib-musl (dependency repos send this)
+        type: string
+        default: ''
+      number:
+        description: The pull request's number
+        type: string
+        default: ''
+      comment:
+        description: Id of the `recheck` comment that asked for this run
+        type: string
+        default: ''
+      cascade:
+        description: Also re-test the PRs that were tested together with this one
+        type: string
+        default: 'true'
 
 permissions: {}
 
 concurrency:
   group: >-
     catalog-test-${{ github.event_name }}-${{
-    github.event.client_payload.repo || github.event.pull_request.number || github.event.schedule ||
-    inputs.channel || github.run_id }}-${{ github.event.client_payload.number || '' }}
-  cancel-in-progress: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'pull_request' }}
+    github.event.pull_request.number || inputs.repo || github.event.schedule ||
+    inputs.channel || github.run_id }}-${{ inputs.number || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.repo != '') }}
 
 env:
   UKCI: uv run --frozen --no-dev --project .github/ci python -m ukci
@@ -84,7 +98,7 @@ jobs:
 
       - name: GitHub App token
         id: token
-        if: always() && github.event_name == 'repository_dispatch' && steps.plan.outputs.root_repo_name != ''
+        if: always() && github.event_name == 'workflow_dispatch' && steps.plan.outputs.root_repo_name != ''
         uses: &app-token actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ vars.APP_ID }}
@@ -99,26 +113,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
         run: $UKCI check-start --plan plan.json
-
-  fan-out:
-    needs: plan
-    if: always() && needs.plan.outputs.fan_out == 'true'
-    runs-on: *runner
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - *checkout
-      - *uv
-      - &download-plan
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: plan
-      - name: Re-test dependent PRs
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PLAN_DIGEST: ${{ needs.plan.outputs.digest }}
-        run: $UKCI fan-out --plan plan.json
 
   test:
     needs: plan
@@ -139,7 +133,10 @@ jobs:
           ref: ${{ needs.plan.outputs.catalog_sha }}
           persist-credentials: false
       - *uv
-      - *download-plan
+      - &download-plan
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: plan
       - name: Set up runner
         timeout-minutes: 20
         run: .github/ci/setup-host.sh
@@ -180,7 +177,7 @@ jobs:
           path: results
       - name: GitHub App token
         id: token
-        if: github.event_name == 'repository_dispatch' && needs.plan.outputs.check_id != ''
+        if: github.event_name == 'workflow_dispatch' && needs.plan.outputs.check_id != ''
         uses: *app-token
         with:
           app-id: ${{ vars.APP_ID }}
@@ -205,3 +202,20 @@ jobs:
           path: verdicts.json
           retention-days: 90
           if-no-files-found: ignore
+
+  fan-out:
+    needs: [plan, report]
+    if: ${{ !cancelled() && needs.plan.outputs.fan_out == 'true' }}
+    runs-on: *runner
+    timeout-minutes: 10
+    permissions:
+      actions: write
+    steps:
+      - *checkout
+      - *uv
+      - *download-plan
+      - name: Re-test dependent PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_DIGEST: ${{ needs.plan.outputs.digest }}
+        run: $UKCI fan-out --plan plan.json

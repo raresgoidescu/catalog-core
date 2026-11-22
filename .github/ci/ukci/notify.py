@@ -12,6 +12,7 @@ from .data import Store, config_key
 from .models import Plan, Verdict
 
 FAILING = {"FAIL", "REGRESSION"}
+NOT_A_CHANGE = {"INFRA", "FLAKY"}
 MAX_LINES = 15
 
 
@@ -19,22 +20,24 @@ def next_state(previous: dict | None, verdicts: list[Verdict], error: str, run_u
     cells = dict((previous or {}).get("cells") or {})
     if not error:
         for v in verdicts:
-            if v.verdict != "INFRA":
+            if v.verdict not in NOT_A_CHANGE:
                 cells[config_key(v)] = v.verdict
     return {"run_url": run_url, "error": error, "cells": cells}
 
 
 def changes(previous: dict | None, verdicts: list[Verdict]) -> tuple[list[str], list[str]]:
-    before = (previous or {}).get("cells") or {}
+    if previous is None:
+        return [], []
+    before = previous.get("cells") or {}
     broke = []
     fixed = []
     for v in verdicts:
         key = config_key(v)
-        if key not in before or v.verdict == "INFRA":
+        if v.verdict in NOT_A_CHANGE:
             continue
-        if v.verdict in FAILING and before[key] not in FAILING:
+        if v.verdict in FAILING and before.get(key) not in FAILING:
             broke.append(f"{key}: {v.reason}")
-        elif v.verdict not in FAILING and before[key] in FAILING:
+        elif v.verdict not in FAILING and before.get(key) in FAILING:
             fixed.append(key)
     return broke, fixed
 

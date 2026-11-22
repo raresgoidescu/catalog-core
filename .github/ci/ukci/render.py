@@ -30,13 +30,13 @@ def oneline(text: str, limit: int = 200) -> str:
 
 
 def cell(text: str) -> str:
-    return oneline(text, 300).replace("|", "\\|")
+    return oneline(text, 300).replace("|", "\\|").replace("[", "\\[").replace("<", "&lt;")
 
 
 def code(text: str) -> str:
     if not text:
         return ""
-    return "`" + cell(text).replace("`", "'") + "`"
+    return "`" + oneline(text, 300).replace("|", "\\|").replace("`", "'") + "`"
 
 
 def label(name: VerdictName) -> str:

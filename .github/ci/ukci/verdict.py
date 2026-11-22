@@ -13,6 +13,7 @@ def judge_one(
     base: Attempt | None,
     comparable: bool,
     infra_error: str | None,
+    base_retry: Attempt | None = None,
 ) -> tuple[VerdictName, str]:
     if first is None:
         return "INFRA", infra_error or "did not run"
@@ -29,6 +30,8 @@ def judge_one(
         return "FAIL", last.reason
     if base is None:
         return "INFRA", infra_error or "the comparison run without the PRs is missing"
+    if base_retry is not None and not base.ok:
+        base = base_retry
     if base.env_error:
         return "INFRA", f"the runner is missing a tool: {base.reason}"
     if base.fetch_error:
@@ -59,6 +62,7 @@ def judge(plan: Plan, results: list[Result]) -> list[Verdict]:
                 attempts.get((variant, "base")),
                 plan.has_base(cell) and variant not in new_variants,
                 infra_error,
+                attempts.get((variant, "base_retry")),
             )
             verdicts.append(Verdict(app=cell.app, compiler=cell.compiler, variant=variant, verdict=name, reason=reason))
     return verdicts
