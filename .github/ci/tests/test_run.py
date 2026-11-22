@@ -224,3 +224,15 @@ def test_a_known_scheduled_result_replaces_the_base_run(app, tmp_path, monkeypat
         ("first", "FAIL", ""),
         ("base", "PASS", "https://nightly"),
     ]
+
+
+def test_a_line_cut_by_parallel_output_is_not_the_reason(tmp_path):
+    log = tmp_path / "build.x"
+    log.write_text(
+        "49:4: error: instruction requires: fp-armv8\n"
+        "/w/repos/unikraft/plat/ectx.c:50:4: error: instruction requires: fp-armv8\n"
+    )
+    assert (
+        run.failure_reason(str(log), "build", "/w")[0]
+        == "unikraft/plat/ectx.c:50:4: error: instruction requires: fp-armv8"
+    )

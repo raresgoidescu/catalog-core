@@ -126,3 +126,10 @@ def test_check_text_cannot_break_the_table():
 def test_titles_without_results():
     assert render.title(Plan(), []) == "No app uses the changed repositories"
     assert render.title(Plan(errors=["x conflicts", "y"]), []) == "Not tested: x conflicts (+1 more)"
+
+
+def test_one_error_everywhere_says_all():
+    p = plan(["a", "b"])
+    attempts = [attempt(v, **BUILD_FAIL) for v in "ab"] + [attempt(v, "base") for v in "ab"]
+    vs = verdict.judge(p, [Result(app="nginx", compiler="gcc", plan_hash="h", attempts=attempts)])
+    assert "| **regression** | `x.c: boom` | all 2 |" in render.check(p, vs)
