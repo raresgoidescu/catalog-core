@@ -54,7 +54,7 @@ env:
 
 jobs:
   plan:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -115,7 +115,7 @@ jobs:
   fan-out:
     needs: plan
     if: github.event_name == 'repository_dispatch' && needs.plan.outputs.ok == 'true'
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: write     # repository_dispatch to this repository
@@ -136,7 +136,7 @@ jobs:
   test:
     needs: plan
     if: needs.plan.outputs.ok == 'true' && needs.plan.outputs.has_cells == 'true'
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions: {}
     # Runs of PRs from non-members wait here for a maintainer's approval.
@@ -189,7 +189,7 @@ jobs:
   report:
     needs: [plan, test]
     if: always() && needs.plan.outputs.ok == 'true' && needs.plan.outputs.has_cells == 'true'
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write     # append results to the ci-data branch

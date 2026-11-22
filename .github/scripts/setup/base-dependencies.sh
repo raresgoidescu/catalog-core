@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Install the host tools needed to build and run catalog-core apps.
+# Install the host tools needed to build and run catalog-core apps
+# (ubuntu-24.04: GCC 13, clang 18, QEMU 8.2).
 #
 # apt installs nothing if a single package is unavailable, so after
 # installing we assert that every binary the test scripts need exists.
