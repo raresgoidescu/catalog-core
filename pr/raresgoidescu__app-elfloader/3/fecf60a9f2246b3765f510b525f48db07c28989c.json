@@ -1,12 +1,13 @@
 {
  "conclusion": "success",
- "plan_hash": "a55f76dc046b8511f69d3c559d416f6cd1c194f26808f7f788508d046dfef1c2",
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45018906704",
+ "plan_hash": "5178f8528dd2820c722faf239a24ee124cba84cee537131c8c0f84df60781586",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45019846073",
  "verdicts": [
   {
    "app": "bincompat-c-hello",
    "compiler": "gcc",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "qemu.x86_64",
    "verdict": "PASS"
@@ -15,6 +16,7 @@
    "app": "bincompat-c-hello",
    "compiler": "gcc",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "fc.x86_64",
    "verdict": "PASS"
@@ -23,6 +25,7 @@
    "app": "bincompat-c-hello",
    "compiler": "clang",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "qemu.x86_64",
    "verdict": "PASS"
@@ -31,6 +34,7 @@
    "app": "bincompat-c-hello",
    "compiler": "clang",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "fc.x86_64",
    "verdict": "PASS"
@@ -39,6 +43,7 @@
    "app": "elfloader-basic",
    "compiler": "gcc",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "qemu.x86_64",
    "verdict": "PASS"
@@ -47,6 +52,7 @@
    "app": "elfloader-basic",
    "compiler": "gcc",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "fc.x86_64",
    "verdict": "PASS"
@@ -55,6 +61,7 @@
    "app": "elfloader-basic",
    "compiler": "clang",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "qemu.x86_64",
    "verdict": "PASS"
@@ -63,6 +70,7 @@
    "app": "elfloader-basic",
    "compiler": "clang",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "fc.x86_64",
    "verdict": "PASS"
@@ -71,6 +79,7 @@
    "app": "elfloader-net",
    "compiler": "gcc",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "qemu.x86_64",
    "verdict": "PASS"
@@ -79,6 +88,7 @@
    "app": "elfloader-net",
    "compiler": "gcc",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "fc.x86_64",
    "verdict": "PASS"
@@ -87,6 +97,7 @@
    "app": "elfloader-net",
    "compiler": "clang",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "qemu.x86_64",
    "verdict": "PASS"
@@ -95,6 +106,7 @@
    "app": "elfloader-net",
    "compiler": "clang",
    "detail": "passed",
+   "inherited_from": null,
    "phase": null,
    "variant": "fc.x86_64",
    "verdict": "PASS"
