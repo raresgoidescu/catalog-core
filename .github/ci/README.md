@@ -59,7 +59,8 @@ cd nginx && ./.scripts/test/all.sh  # what CI runs, all variants
 **Approving runs.** PRs from authors who aren't members, owners or
 collaborators (including any PR in their `Depends-On` set) only run after
 a maintainer approves the `ci-needs-approval` environment in the workflow
-run linked from the check. Every new push needs a new approval.
+run linked from the check. Every new push needs a new approval. Declining
+shows up on the PR as "⛔ Not run: @maintainer declined to run this code".
 
 **Adding an app.** Add its directory. CI reads its dependencies from
 `setup.sh` (`check_exists_and_create_symlink "<path>"`) and its variants

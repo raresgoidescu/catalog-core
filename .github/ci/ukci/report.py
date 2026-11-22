@@ -303,10 +303,37 @@ def open_store(write: bool):
         return None
 
 
+def declined(plan: dict) -> dict | None:
+    """The maintainer review that declined to run this PR set, if any."""
+    repo, run_id = os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_RUN_ID")
+    if plan.get("trusted") or not repo or not run_id:
+        return None
+    try:
+        reviews = GitHub(os.environ.get("CI_DATA_TOKEN")).get(f"/repos/{repo}/actions/runs/{run_id}/approvals") or []
+    except Exception:
+        return None
+    return next((r for r in reviews if r.get("state") == "rejected"), None)
+
+
 def cmd_finish(args) -> int:
     with open(args.plan) as f:
         plan = json.load(f)
     results = load_results(args.results)
+    if not results and (review := declined(plan)):
+        who = (review.get("user") or {}).get("login", "a maintainer")
+        t = f"⛔ Not run: @{who} declined to run this code"
+        s = (f"A maintainer declined to run the code of these PRs"
+             + (f": \"{review['comment']}\"" if review.get("comment") else "") + "\n\n" + render(plan, None))
+        write_step_summary(f"## {t}\n\n{s}")
+        try:
+            gh = GitHub()
+            post_check(gh, plan, status="completed", title_text=t, summary=s, conclusion="action_required",
+                       check_id=args.check_id or None)
+            post_member_checks(gh, plan, status="completed", title_text=t, summary=s, conclusion="action_required")
+        except Exception as e:
+            print(f"::warning::could not finish the Catalog Core check: {e}")
+        print(t)
+        return 1
     verdicts = V.judge(plan, results) if not plan.get("errors") else []
     store = open_store(write=True)
     blame(plan, verdicts, store)
