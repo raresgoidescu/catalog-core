@@ -103,7 +103,10 @@ def errors_table(verdicts: list[Verdict]) -> list[str]:
     ordered = sorted(groups.items(), key=lambda item: (ORDER.index(item[0][0]), -len(item[1])))
     lines = ["| verdict | first error | configurations |", "|---|---|---|"]
     for (name, reason), configs in ordered:
-        lines.append(f"| {label(name)} | {code(reason)} | {describe(configs)} |")
+        where = describe(configs)
+        if len(configs) == len(verdicts):
+            where = f"all {len(configs)}"
+        lines.append(f"| {label(name)} | {code(reason)} | {where} |")
     lines.append("")
     return lines
 

@@ -16,6 +16,7 @@ COMPILERS: dict[str, dict[str, str]] = {
 }
 
 LINE_RE = re.compile(r"^\s*(build|run)\.(\S+)\s+\.\.\.\s+(PASSED|FAILED)\s*$")
+CLEAN_ERROR_RE = re.compile(r"^\S+\.[A-Za-z]+:\d+(?::\d+)?: (?:fatal )?error: ")
 COMPILER_ERROR_RE = re.compile(r"(?:^|\s)\S+?:\d+(?::\d+)?: (?:fatal )?error: ")
 KNOWN_ERROR_RE = re.compile(r"No rule to make target|Require \S+ version")
 ANY_ERROR_RE = re.compile(r"\berror\b", re.I)
@@ -87,7 +88,7 @@ def failure_reason(log_path: str, phase: str, root: str) -> tuple[str, bool, boo
         fetch = first_match(FETCH_ERROR_RE, lines) is not None
         found = first_match(MISSING_TOOL_RE, lines)
         missing_tool = found is not None
-        for regex in (COMPILER_ERROR_RE, KNOWN_ERROR_RE, ANY_ERROR_RE):
+        for regex in (CLEAN_ERROR_RE, COMPILER_ERROR_RE, KNOWN_ERROR_RE, ANY_ERROR_RE):
             if found is None:
                 found = first_match(regex, lines)
     else:
