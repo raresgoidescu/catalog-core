@@ -1,0 +1,1087 @@
+{
+ "conclusion": "success",
+ "plan_hash": "ade0b8c64751d2834336039dae984be2d01bf815165646229ac8b0324912a1c6",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45023534449",
+ "verdicts": [
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "aarch64-linux-gnu-clang: unknown C compiler",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "qemu.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "fc.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "xen.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/xen/arch/arm64/include/uk/plat/xen/arch/except.h: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "qemu.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "fc.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "xen.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/xen/arch/arm64/include/uk/plat/xen/arch/except.h: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: instruction requires: fp-armv8",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: instruction requires: fp-armv8",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "",
+   "inherited_from": null,
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "detail": "fails the same way on staging and catalog-core main without the PRs",
+   "inherited_from": null,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c: expected readable system register",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  }
+ ]
+}
