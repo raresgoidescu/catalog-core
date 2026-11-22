@@ -54,6 +54,9 @@ payload=$(jq -n \
   --argjson color "$COLOR" \
   '{
     content: $content,
+    # Only the configured DISCORD_MENTION may ping; nothing in the
+    # details text (which includes test output) can mention anyone.
+    allowed_mentions: { parse: (if $content == "" then [] else ["users", "roles"] end) },
     embeds: [{
       title: $title,
       description: $desc,

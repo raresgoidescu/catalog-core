@@ -41,70 +41,93 @@ on:
         required: false
         type: string
         default: ""
+    secrets:
+      PRIVATE_KEY:
+        required: false
+      DISCORD_WEBHOOK_URL:
+        required: false
+
+permissions: {}
 
 jobs:
   setup:
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
     outputs:
       owner: ${{ steps.parse_repo.outputs.owner }}
       repo: ${{ steps.parse_repo.outputs.repo }}
-      token: ${{ steps.generate_token.outputs.token }}
       check_run_id: ${{ steps.create_check.outputs.result }}
       apps: ${{ steps.list_apps.outputs.apps }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ github.ref }}
+          persist-credentials: false
 
       - name: Parse Repository Info
         if: github.event_name == 'repository_dispatch'
         id: parse_repo
-        run: bash .github/scripts/utils/parse-repo.sh "${{ github.event.client_payload.pr_repo }}"
+        env:
+          PR_REPO: ${{ github.event.client_payload.pr_repo }}
+        run: bash .github/scripts/utils/parse-repo.sh "$PR_REPO"
 
       - name: Generate GitHub App Token
         if: github.event_name == 'repository_dispatch'
         id: generate_token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ steps.parse_repo.outputs.owner }}
           repositories: ${{ steps.parse_repo.outputs.repo }}
+          permission-checks: write
 
       - name: Create Initial Check Run
         if: github.event_name == 'repository_dispatch'
         id: create_check
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          OWNER: ${{ steps.parse_repo.outputs.owner }}
+          REPO: ${{ steps.parse_repo.outputs.repo }}
+          HEAD_SHA: ${{ github.event.client_payload.pr_sha }}
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           script: |
+            const { OWNER, REPO, HEAD_SHA } = process.env;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const { data } = await github.rest.checks.create({
-              owner: '${{ steps.parse_repo.outputs.owner }}',
-              repo: '${{ steps.parse_repo.outputs.repo }}',
+              owner: OWNER,
+              repo: REPO,
               name: 'Catalog Core Tests',
-              head_sha: '${{ github.event.client_payload.pr_sha }}',
+              head_sha: HEAD_SHA,
               status: 'in_progress',
               output: {
                 title: 'Tests are running...',
-                summary: 'The Unikraft Catalog Core tests have been triggered. [View Progress](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+                summary: `The Unikraft Catalog Core tests have been triggered. [View Progress](${runUrl})`
               }
             });
             return data.id;
 
       - name: List apps for matrix
         id: list_apps
+        env:
+          APPS_OVERRIDE: ${{ inputs.apps_override }}
+          MODE: ${{ inputs.mode }}
         run: |
-          if [ -n "${{ inputs.apps_override }}" ]; then
-            apps='${{ inputs.apps_override }}'
+          if [ -n "$APPS_OVERRIDE" ]; then
+            apps="$APPS_OVERRIDE"
             echo "Using apps_override, skipping list-apps.sh: $apps"
           else
-            apps=$(bash .github/scripts/tests/list-apps.sh "${{ inputs.mode }}")
+            apps=$(bash .github/scripts/tests/list-apps.sh "$MODE")
           fi
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
 
       - name: Setup repositories
-        run: ./setup.sh "${{ inputs.branch }}"
+        env:
+          BRANCH: ${{ inputs.branch }}
+        run: ./setup.sh "$BRANCH"
 
       - name: Check out triggering pull request
         if: github.event_name == 'repository_dispatch'
@@ -129,7 +152,7 @@ jobs:
         run: tar -czf repos.tar.gz repos
 
       - name: Upload repositories artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: catalog-core-repos-${{ github.run_id }}
           path: repos.tar.gz
@@ -140,13 +163,19 @@ jobs:
         if: always()
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISPLAY_NAME: ${{ inputs.display_name }}
+          BRANCH: ${{ inputs.branch }}
+          MODE: ${{ inputs.mode }}
+          COMPILERS: ${{ inputs.compilers }}
         run: |
           bash .github/scripts/notify/discord-notify.sh started \
-            "${{ inputs.display_name }} (branch=${{ inputs.branch }}, mode=${{ inputs.mode }}, compilers=${{ inputs.compilers }})"
+            "${DISPLAY_NAME} (branch=${BRANCH}, mode=${MODE}, compilers=${COMPILERS})"
 
   test:
     needs: setup
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
     timeout-minutes: 120
     continue-on-error: false
     strategy:
@@ -156,26 +185,19 @@ jobs:
         compiler: ${{ fromJson(inputs.compilers) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         timeout-minutes: 3
         with:
           ref: ${{ github.ref }}
+          persist-credentials: false
 
       - name: Download repositories artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: catalog-core-repos-${{ github.run_id }}
 
       - name: Extract repositories
         run: tar -xzf repos.tar.gz
-
-      - name: Cache apt packages
-        if: inputs.toolchain_image == ''
-        uses: actions/cache@v5
-        timeout-minutes: 3
-        with:
-          path: /var/cache/apt/archives
-          key: apt-${{ runner.os }}-${{ hashFiles('.github/scripts/setup/base-dependencies.sh') }}
 
       - name: Install Base Dependencies
         if: inputs.toolchain_image == ''
@@ -183,7 +205,7 @@ jobs:
         run: bash .github/scripts/utils/retry.sh 10m 2 30s -- bash .github/scripts/setup/base-dependencies.sh
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         timeout-minutes: 5
 
       - name: Enable Docker Buildkit
@@ -201,25 +223,34 @@ jobs:
       - name: Collect tool versions
         if: matrix.compiler == fromJson(inputs.compilers)[0]  # only once per app, not once per compiler -- versions don't vary by compiler
         timeout-minutes: 5
+        env:
+          APP: ${{ matrix.app }}
         run: |
           bash .github/scripts/setup/collect-tool-versions.sh
-          mv tool-versions.txt "tool-versions-${{ matrix.app }}.txt"
+          mv tool-versions.txt "tool-versions-${APP}.txt"
 
       - name: Run test for ${{ matrix.app }} (${{ matrix.compiler }})
         id: run-test
         timeout-minutes: 20
-        run: bash .github/scripts/tests/run-app-test.sh "${{ matrix.app }}" "${{ matrix.compiler }}" "${{ inputs.branch }}"
+        env:
+          APP: ${{ matrix.app }}
+          COMPILER: ${{ matrix.compiler }}
+          BRANCH: ${{ inputs.branch }}
+        run: bash .github/scripts/tests/run-app-test.sh "$APP" "$COMPILER" "$BRANCH"
 
       - name: Namespace in-app log dir by compiler
         if: always()
+        env:
+          APP: ${{ matrix.app }}
+          COMPILER: ${{ matrix.compiler }}
         run: |
-          if [ -d "${{ matrix.app }}/.scripts/test/log" ]; then
-            mv "${{ matrix.app }}/.scripts/test/log" "${{ matrix.app }}-${{ matrix.compiler }}-log"
+          if [ -d "${APP}/.scripts/test/log" ]; then
+            mv "${APP}/.scripts/test/log" "${APP}-${COMPILER}-log"
           fi
 
       - name: Upload per-app log
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: catalog-core-app-log-${{ matrix.app }}-${{ matrix.compiler }}-${{ github.run_id }}
           path: |
@@ -234,14 +265,17 @@ jobs:
     needs: [setup, test]
     if: always()
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ github.ref }}
+          persist-credentials: false
 
       - name: Download all per-app logs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           pattern: catalog-core-app-log-*-${{ github.run_id }}
           merge-multiple: true
@@ -250,28 +284,47 @@ jobs:
         id: aggregate
         run: bash .github/scripts/tests/aggregate-results.sh
 
+      # A token can't be handed over from the setup job: GitHub drops job
+      # outputs that contain masked values. Mint a fresh one here.
+      - name: Generate GitHub App Token
+        if: always() && github.event_name == 'repository_dispatch'
+        id: generate_token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ needs.setup.outputs.owner }}
+          repositories: ${{ needs.setup.outputs.repo }}
+          permission-checks: write
+
       - name: Update Final Check Run
         if: always() && github.event_name == 'repository_dispatch'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          RESULT: ${{ steps.aggregate.outputs.result }}
+          TEST_JOB_STATUS: ${{ needs.test.result }}
+          OWNER: ${{ needs.setup.outputs.owner }}
+          REPO: ${{ needs.setup.outputs.repo }}
+          CHECK_RUN_ID: ${{ needs.setup.outputs.check_run_id }}
         with:
-          github-token: ${{ needs.setup.outputs.token }}
+          github-token: ${{ steps.generate_token.outputs.token }}
           script: |
-            const result = '${{ steps.aggregate.outputs.result }}';
-            const testJobStatus = '${{ needs.test.result }}';
+            const { RESULT, TEST_JOB_STATUS, OWNER, REPO, CHECK_RUN_ID } = process.env;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-            const conclusion = result === 'success'
+            const conclusion = RESULT === 'success'
               ? 'success'
-              : (testJobStatus === 'cancelled' ? 'cancelled' : 'failure');
+              : (TEST_JOB_STATUS === 'cancelled' ? 'cancelled' : 'failure');
 
             await github.rest.checks.update({
-              owner: '${{ needs.setup.outputs.owner }}',
-              repo: '${{ needs.setup.outputs.repo }}',
-              check_run_id: ${{ needs.setup.outputs.check_run_id }},
+              owner: OWNER,
+              repo: REPO,
+              check_run_id: Number(CHECK_RUN_ID),
               status: 'completed',
               conclusion: conclusion,
               output: {
                 title: `Check Status: ${conclusion}`,
-                summary: `The Catalog Core tests have finished. [View Full Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+                summary: `The Catalog Core tests have finished. [View Full Logs](${runUrl})`
               }
             });
 
@@ -286,18 +339,22 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_THREAD_ID: ${{ vars.DISCORD_THREAD_ID }}
           DISCORD_MENTION: ${{ vars.DISCORD_MENTION }}
+          RESULT: ${{ steps.aggregate.outputs.result }}
+          DISPLAY_NAME: ${{ inputs.display_name }}
+          BRANCH: ${{ inputs.branch }}
+          MODE: ${{ inputs.mode }}
         run: |
           summary=$(python3 .github/scripts/tests/render-summary.py \
             --csv results.csv --discord-summary)
-          bash .github/scripts/notify/discord-notify.sh "${{ steps.aggregate.outputs.result }}" \
-            "${{ inputs.display_name }} (branch=${{ inputs.branch }}, mode=${{ inputs.mode }}) finished.
+          bash .github/scripts/notify/discord-notify.sh "$RESULT" \
+            "${DISPLAY_NAME} (branch=${BRANCH}, mode=${MODE}) finished.
           \`\`\`
           $summary
           \`\`\`"
 
       - name: Archive test artifacts
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: catalog-core-test-logs-${{ github.run_id }}
           path: |

@@ -35,6 +35,9 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.client_payload.pr_repo }}-${{ github.event.client_payload.pr_number || github.ref }}
   cancel-in-progress: true
@@ -50,8 +53,13 @@ jobs:
       branch: ${{ steps.resolve.outputs.branch }}
     steps:
       - id: resolve
+        env:
+          ACTION: ${{ github.event.action }}
+          INPUT_MODE: ${{ github.event.inputs.mode || 'all' }}
+          INPUT_BRANCH: ${{ github.event.inputs.branch || 'staging' }}
+          INPUT_APPS: ${{ github.event.inputs.apps }}
         run: |
-          case "${{ github.event.action }}" in
+          case "$ACTION" in
             musl_open_pr)
               mode=musl; dep_repo_path=repos/libs/musl; display_name="catalog-core / lib-musl-tests" ;;
             libelf_open_pr)
@@ -61,16 +69,16 @@ jobs:
             elfloader_open_pr)
               mode=elfloader; dep_repo_path=repos/apps/elfloader; display_name="catalog-core / app-elfloader-tests" ;;
             unikraft_open_pr|"")
-              mode="${{ github.event.inputs.mode || 'all' }}"; dep_repo_path=repos/unikraft; display_name="catalog-core / test-all" ;;
+              mode="$INPUT_MODE"; dep_repo_path=repos/unikraft; display_name="catalog-core / test-all" ;;
             *)
-              echo "::error::Unrecognized dispatch action '${{ github.event.action }}'"; exit 1 ;;
+              echo "::error::Unrecognized dispatch action '$ACTION'"; exit 1 ;;
           esac
 
-          branch="${{ github.event.inputs.branch || 'staging' }}"
+          branch="$INPUT_BRANCH"
 
           apps_override=""
-          if [ -n "${{ github.event.inputs.apps }}" ]; then
-            apps_override=$(echo "${{ github.event.inputs.apps }}" | tr ',' '\n' | jq -R . | jq -sc .)
+          if [ -n "$INPUT_APPS" ]; then
+            apps_override=$(printf '%s' "$INPUT_APPS" | tr ',' '\n' | jq -R . | jq -sc .)
           fi
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
@@ -89,4 +97,6 @@ jobs:
       dep_repo_path: ${{ needs.mode-lookup.outputs.dep_repo_path }}
       display_name: ${{ needs.mode-lookup.outputs.display_name }}
       apps_override: ${{ needs.mode-lookup.outputs.apps_override }}
-    secrets: inherit
+    secrets:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
