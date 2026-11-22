@@ -140,7 +140,8 @@ def failure_reason(log_path: str, phase: str, root: str) -> tuple[str, str, bool
             if m := COMPILER_ERROR_RE.search(line):
                 path = re.sub(r"^.*?/workdir/build/[^/]+/origin/", "", m.group(1))   # unpacked library sources
                 path = re.sub(r"^repos/", "", path)
-                reason = f"{path}: {m.group(2).strip()}"
+                # gcc says `#error "x"`, clang says `"x"`: same failure, same text.
+                reason = f"{path}: {re.sub(r'^#error ', '', m.group(2).strip())}"
                 break
         reason = reason or next((line for line in clean if OTHER_ERROR_RE.search(line)), None)
     else:
