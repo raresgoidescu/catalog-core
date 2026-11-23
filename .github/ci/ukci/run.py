@@ -9,7 +9,7 @@ import threading
 import time
 
 from . import apps, data, git
-from .models import Attempt, Kind, LockEntry, Plan, Result, Status
+from .models import Attempt, Cell, Kind, LockEntry, Plan, Result, Status, TamperedPlan, load_plan
 
 COMPILERS: dict[str, dict[str, str]] = {
     "gcc": {},
@@ -31,7 +31,7 @@ FETCH_ERROR_RE = re.compile(
 ORIGIN_RE = re.compile(r"\S*?/workdir/build/[^/\s]+/origin/")
 
 
-def checkout(lock: dict[str, LockEntry], paths: list[str], dest: str) -> None:
+def checkout(plan: Plan, lock: dict[str, LockEntry], paths: list[str], dest: str) -> None:
     for path in paths:
         entry = lock[path]
         target = os.path.join(dest, path)
@@ -39,8 +39,7 @@ def checkout(lock: dict[str, LockEntry], paths: list[str], dest: str) -> None:
         print(f"::group::{path}: {entry.repo}@{entry.sha[:12]} ({entry.source})", flush=True)
         url = f"https://github.com/{entry.repo}"
         if entry.parts:
-            assert entry.base_sha
-            git.checkout_combined(url, entry.base_sha, entry.parts, entry.sha, target)
+            git.checkout_combined(url, plan.base_lock[path].sha, entry.parts, entry.sha, target)
         else:
             git.fetch_commit(url, entry.sha, target)
         print("::endgroup::", flush=True)
@@ -208,10 +207,15 @@ def needs_base(attempt: Attempt) -> bool:
     return not attempt.ok and not attempt.fetch_error and not attempt.env_error
 
 
+def checkout_error(what: str, e: Exception) -> str:
+    return f"{what} failed: {getattr(e, 'stderr', '') or e}"[:400]
+
+
 class Runner:
-    def __init__(self, args, plan: Plan):
+    def __init__(self, args, plan: Plan, cell: Cell):
         self.args = args
         self.plan = plan
+        self.cell = cell
         self.root = os.path.abspath(args.root)
         self.app_dir = os.path.join(self.root, args.app)
         self.repos_dir = os.path.join(self.root, "repos")
@@ -245,11 +249,9 @@ class Runner:
 
     def known_base(self, failed: list[apps.Variant]) -> list[apps.Variant]:
         repo = os.environ.get("GITHUB_REPOSITORY")
-        catalog = self.plan.catalog_base or self.plan.catalog
-        if not repo or catalog is None:
+        path = data.cell_base_path(self.plan, self.cell, self.result.tools)
+        if not repo or path is None:
             return failed
-        repos = {path: self.plan.base_lock[path].sha for path in self.app.repos}
-        path = data.base_path(self.args.app, self.args.compiler, catalog.sha, repos, self.result.tools)
         known = data.fetch_base(repo, path)
         remaining = []
         for variant in failed:
@@ -275,47 +277,51 @@ class Runner:
         return app_dir, [v for v in failed if v.name in existing]
 
     def run(self) -> int:
+        status = self.run_all()
+        self.save()
+        return status
+
+    def run_all(self) -> int:
         variants = self.app.variants
         if self.args.variants:
             wanted = self.args.variants.split(",")
             variants = [v for v in variants if v.name in wanted]
         try:
-            checkout(self.plan.lock, self.app.repos, self.repos_dir)
+            checkout(self.plan, self.plan.lock, self.cell.repos, self.repos_dir)
         except (subprocess.CalledProcessError, RuntimeError) as e:
-            self.result.infra_error = f"checkout failed: {getattr(e, 'stderr', '') or e}"[:400]
-            self.save()
+            self.result.infra_error = checkout_error("checkout", e)
             return 2
         final = self.attempt("first", variants, self.app_dir)
         if self.args.no_recheck:
-            self.save()
             return 0
         retry = [v for v in variants if needs_retry(final[v.name])]
         final.update(self.attempt("retry", retry, self.app_dir))
         failed = [v for v in variants if needs_base(final[v.name])]
-        changed = [path for path in self.app.repos if self.plan.base_lock[path].sha != self.plan.lock[path].sha]
-        if not failed or not (changed or self.plan.catalog_base):
-            self.save()
+        if not failed or not self.plan.has_base(self.cell):
             return 0
         failed = self.known_base(failed)
         if not failed:
-            self.save()
             return 0
+        changed = [path for path in self.cell.repos if self.plan.base_lock[path].sha != self.plan.lock[path].sha]
         try:
-            checkout(self.plan.base_lock, changed, self.repos_dir)
+            checkout(self.plan, self.plan.base_lock, changed, self.repos_dir)
             app_dir, failed = self.base_dir(failed)
             base = self.attempt("base", failed, app_dir)
             again = [v for v in failed if final[v.name].phase == "run" and needs_retry(base[v.name])]
             self.attempt("base_retry", again, app_dir)
         except (subprocess.CalledProcessError, RuntimeError) as e:
-            self.result.infra_error = f"checkout without the PRs failed: {getattr(e, 'stderr', '') or e}"[:400]
-        self.save()
+            self.result.infra_error = checkout_error("checkout without the PRs", e)
         return 0
 
 
 def main(args) -> int:
-    with open(args.plan) as f:
-        plan = Plan.model_validate_json(f.read())
-    if not any(c.app == args.app and c.compiler == args.compiler for c in plan.cells):
+    try:
+        plan = load_plan(args.plan)
+    except TamperedPlan as e:
+        print(f"::error::{e}; not running anything from it")
+        return 1
+    cell = next((c for c in plan.cells if c.app == args.app and c.compiler == args.compiler), None)
+    if cell is None:
         raise SystemExit(f"{args.app}/{args.compiler} is not in the plan")
     os.makedirs(os.path.abspath(args.out), exist_ok=True)
-    return Runner(args, plan).run()
+    return Runner(args, plan, cell).run()

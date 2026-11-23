@@ -182,16 +182,24 @@ def collapse_stacks(gh: Source, res: Resolution) -> None:
     by_path: dict[str, list[Found]] = {}
     for found in res.prs:
         by_path.setdefault(path_of(found.pr.repo), []).append(found)
+    known: dict[tuple[str, str], bool] = {}
+
+    def below(lower: Found, upper: Found) -> bool:
+        key = (lower.pr.ref, upper.pr.ref)
+        if key not in known:
+            known[key] = is_below(gh, lower, upper)
+        return known[key]
+
     for path, group in by_path.items():
         tops = []
         for candidate in group:
-            if not any(is_below(gh, candidate, other) for other in group):
+            if not any(below(candidate, other) for other in group):
                 tops.append(candidate)
         for found in group:
             if found in tops:
                 continue
             for top in tops:
-                if is_below(gh, found, top):
+                if below(found, top):
                     res.dropped[found.pr.ref] = f"included in {top.pr.ref}, which is stacked on top of it"
                     break
         res.used[path] = sorted(tops, key=lambda found: found.pr.number)

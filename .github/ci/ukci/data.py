@@ -11,7 +11,7 @@ import urllib.request
 
 from pydantic import ValidationError
 
-from .models import Attempt, Plan, Report, Result, Reused, Verdict
+from .models import Attempt, Cell, Plan, Report, Result, Reused, Verdict
 
 BRANCH = "ci-data"
 
@@ -29,10 +29,21 @@ def config_key(v: Verdict) -> str:
     return f"{v.app} {v.compiler} {v.variant}"
 
 
+def digest(obj: object) -> str:
+    return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()
+
+
 def base_path(app: str, compiler: str, catalog_sha: str, repos: dict[str, str], tools: dict[str, str]) -> str:
     key = {"app": app, "compiler": compiler, "catalog": catalog_sha, "repos": repos, "tools": tools}
-    digest = hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()
-    return f"base/{digest}.json"
+    return f"base/{digest(key)}.json"
+
+
+def cell_base_path(plan: Plan, cell: Cell, tools: dict[str, str]) -> str | None:
+    catalog = plan.catalog_base or plan.catalog
+    if catalog is None:
+        return None
+    repos = {path: plan.base_lock[path].sha for path in cell.repos}
+    return base_path(cell.app, cell.compiler, catalog.sha, repos, tools)
 
 
 def fetch_base(repo: str, path: str) -> dict[str, Attempt]:
@@ -158,7 +169,7 @@ class Store:
                 self.write(f"deps/{pr_key(p.ref)}/{dependent}", "")
 
     def record_base(self, plan: Plan, results: list[Result]) -> None:
-        if plan.event != "schedule" or plan.catalog is None:
+        if plan.event != "schedule":
             return
         cells = {(c.app, c.compiler): c for c in plan.cells}
         for r in results:
@@ -172,8 +183,9 @@ class Store:
             known = [a for a in final.values() if not a.fetch_error and not a.env_error]
             if not known:
                 continue
-            repos = {path: plan.lock[path].sha for path in cell.repos}
-            path = base_path(r.app, r.compiler, plan.catalog.sha, repos, r.tools)
+            path = cell_base_path(plan, cell, r.tools)
+            if path is None:
+                return
             self.write(path, {"run_url": plan.run_url, "attempts": [a.model_dump() for a in known]})
 
     def dependents(self, ref: str) -> list[str]:

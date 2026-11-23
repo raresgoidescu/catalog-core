@@ -25,6 +25,20 @@ query($owner: String!, $name: String!, $number: Int!) {
 
 TRANSIENT = ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "timeout", "connection reset", "EOF")
 MERGEABLE = {"MERGEABLE": True, "CONFLICTING": False}
+WAIT_MERGEABLE_S = 30.0
+
+
+def run_url() -> str:
+    server = os.environ.get("GITHUB_SERVER_URL") or "https://github.com"
+    return f"{server}/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '0')}"
+
+
+def set_outputs(values: dict[str, str]) -> None:
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        with open(path, "a") as f:
+            for key, value in values.items():
+                f.write(f"{key}={value}\n")
 
 
 class GitHubError(RuntimeError):
@@ -65,9 +79,9 @@ class GitHub:
                 return None
             raise
 
-    def pull_request(self, repo: str, number: int, wait_mergeable: float = 30.0) -> PullRequest | None:
+    def pull_request(self, repo: str, number: int) -> PullRequest | None:
         owner, name = repo.split("/")
-        deadline = time.monotonic() + wait_mergeable
+        deadline = time.monotonic() + WAIT_MERGEABLE_S
         while True:
             try:
                 data = self.gh(

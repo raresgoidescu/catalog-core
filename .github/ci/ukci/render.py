@@ -19,10 +19,10 @@ MAX_SUMMARY = 60000
 README = ".github/ci/README.md"
 
 
-def plural(n: int, one: str, many: str | None = None) -> str:
+def plural(n: int, one: str) -> str:
     if n == 1:
         return f"{n} {one}"
-    return f"{n} {many or one + 's'}"
+    return f"{n} {one}s"
 
 
 def oneline(text: str, limit: int = 200) -> str:
@@ -114,9 +114,10 @@ def errors_table(verdicts: list[Verdict]) -> list[str]:
 def tested_as(plan: Plan) -> dict[str, str]:
     by_pr: dict[str, LockEntry] = {}
     for entry in plan.lock.values():
-        if entry.pr:
-            for ref in entry.pr.split(" + "):
-                by_pr[ref] = entry
+        for part in entry.parts:
+            by_pr[part.label] = entry
+        if entry.pr and not entry.parts:
+            by_pr[entry.pr] = entry
     out = {}
     for pr in plan.prs:
         locked = by_pr.get(pr.ref)
