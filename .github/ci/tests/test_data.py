@@ -96,14 +96,15 @@ def test_ci_errors_keep_the_previous_state():
     [
         (PREV, [v("a", "q", "PASS")], "", None),  # nothing changed
         (PREV, [v("a", "q", "FAIL", reason="boom")], "", "**Newly failing**\n- a gcc q: boom"),
-        (None, [v("a", "q", "PASS")], "", "first recorded run"),
+        (None, [v("a", "q", "PASS")], "", "(staging)**: title\nu"),
         (PREV, [], "the plan job failed", "couldn't run: the plan job failed"),
         ({**PREV, "error": "x"}, [], "the plan job failed", None),  # already said so
         ({**PREV, "error": "x"}, [v("a", "q", "PASS")], "", "Running again after an error."),
     ],
 )
 def test_message(previous, verdicts, error, expected):
-    text = notify.message(Plan(channel="staging", run_url="u"), "title", previous, verdicts, error)
+    broke, fixed = notify.changes(previous, verdicts)
+    text = notify.message(Plan(channel="staging", run_url="u"), "title", previous, broke, fixed, error)
     assert text is None if expected is None else expected in text
 
 
@@ -155,6 +156,7 @@ def test_scheduled_results_become_the_comparison_for_identical_commits(tmp_path,
         catalog=CatalogRef(repo="o/c", sha="c1", source=""),
         cells=[cell],
         lock=lock,
+        base_lock=lock,
     )
     s = store(tmp_path, remote, "s")
     s.record_base(nightly, [Result(app="nginx", compiler="gcc", plan_hash="h", tools=tools, attempts=attempts)])

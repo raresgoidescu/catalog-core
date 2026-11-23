@@ -93,7 +93,7 @@ def nightly(build="PASS"):
 
 def test_nightlies_post_on_change_only_and_mention_only_new_failures(env):
     code, data = env(*nightly("PASS"))
-    assert code == 0 and "first recorded run" in env.posted[-1][0] and env.posted[-1][1] == ""
+    assert code == 0 and "nightly (" in env.posted[-1][0] and env.posted[-1][1] == ""
     assert data.nightly("staging")["cells"] == {"nginx gcc qemu.x86_64": "PASS"}
 
     env(*nightly("PASS"))

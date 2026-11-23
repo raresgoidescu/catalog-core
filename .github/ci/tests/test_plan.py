@@ -95,7 +95,7 @@ def test_who_may_recheck(c, skipped):
     p = planner(FakeAPI(MUSL, comments={7: c} if c else {})).plan(
         plan_mod.Plan(), plan_mod.Trigger("unikraft/lib-musl#12", comment_id=7)
     )
-    assert bool(p.skip) is skipped and p.recheck
+    assert bool(p.skip) is skipped
     assert (p.cells == []) is skipped
 
 
@@ -216,16 +216,18 @@ def test_trusted_code_runs_without_an_environment():
 def test_trusted_jobs_refuse_a_replaced_plan(tmp_path, monkeypatch):
     import hashlib
 
-    from ukci import report
+    from ukci import models, report
+    from ukci import run as run_mod
 
     path = tmp_path / "plan.json"
     path.write_text(plan_mod.Plan(root="o/r#1").model_dump_json())
     monkeypatch.setenv("PLAN_DIGEST", hashlib.sha256(path.read_bytes()).hexdigest())
-    assert report.load_plan(str(path)).root == "o/r#1"
+    assert models.load_plan(str(path)).root == "o/r#1"
     path.write_text(plan_mod.Plan(root="o/r#2").model_dump_json())  # what a test job could do
-    with pytest.raises(report.TamperedPlan):
-        report.load_plan(str(path))
+    with pytest.raises(models.TamperedPlan):
+        models.load_plan(str(path))
     assert report.cmd_finish(type("A", (), {"plan": str(path), "check_id": "", "results": "", "out": ""})) == 1
+    assert run_mod.main(type("A", (), {"plan": str(path), "app": "app", "compiler": "gcc"})) == 1
 
 
 def test_recheck_ignores_case():

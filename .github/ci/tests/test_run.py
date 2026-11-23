@@ -210,7 +210,7 @@ def test_a_known_scheduled_result_replaces_the_base_run(app, tmp_path, monkeypat
     )
     (tmp_path / "plan.json").write_text(plan.model_dump_json())
     checkouts = []
-    monkeypatch.setattr(run, "checkout", lambda lock, paths, dest: checkouts.append(lock[paths[0]].sha))
+    monkeypatch.setattr(run, "checkout", lambda plan, lock, paths, dest: checkouts.append(lock[paths[0]].sha))
     monkeypatch.setattr(run, "tool_versions", lambda: {"gcc": "13"})
     known = Attempt(variant="qemu.x86_64", attempt="base", build="PASS", run="PASS", source="https://nightly")
     asked = []
@@ -266,7 +266,7 @@ def test_a_failing_comparison_run_is_retried_once(app, tmp_path, monkeypatch):
         base_lock={"unikraft": LockEntry(repo="u/unikraft", sha="base", source="")},
     )
     (tmp_path / "plan.json").write_text(plan.model_dump_json())
-    monkeypatch.setattr(run, "checkout", lambda lock, paths, dest: None)
+    monkeypatch.setattr(run, "checkout", lambda plan, lock, paths, dest: None)
     monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
     args = type(
         "A",
