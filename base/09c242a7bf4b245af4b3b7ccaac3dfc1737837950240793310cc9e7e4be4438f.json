@@ -1,0 +1,83 @@
+{
+ "attempts": [
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 23.7,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h:63:12: error: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "source": "",
+   "total_s": 36.9,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 31.1,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h:63:12: error: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "source": "",
+   "total_s": 44.3,
+   "variant": "qemu.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 27.8,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h:63:12: error: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "source": "",
+   "total_s": 41.0,
+   "variant": "fc.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 32.2,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h:63:12: error: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 32.2,
+   "variant": "fc.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 28.6,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h:63:12: error: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 28.6,
+   "variant": "xen.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 30.8,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/lib/ukpal/include/uk/pal/ectx.h:63:12: error: conflicting declaration of \u2018void uk_pal_ectx_sanitize(uk_pal_ectx*)\u2019 with \u2018C\u2019 linkage",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 30.8,
+   "variant": "xen.arm64"
+  }
+ ],
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45139996663"
+}
