@@ -12,7 +12,7 @@ fi
 clean_up
 
 # Start instance.
-start_instance 2>&1 | grep "Hello from Unikraft!" 1>&2
+start_instance 2>&1 | tee /dev/stderr | grep "Hello from Unikraft!" > /dev/null
 if test $? -ne 0; then
     echo "Wrong message printed." 1>&2
     echo "FAILED"
