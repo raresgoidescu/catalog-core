@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import os
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -117,6 +119,19 @@ class Plan(Model):
         if self.catalog_base is not None:
             return True
         return any(path in self.lock and self.base_lock[path].sha != self.lock[path].sha for path in cell.repos)
+
+
+class TamperedPlan(Exception):
+    pass
+
+
+def load_plan(path: str) -> Plan:
+    with open(path, "rb") as f:
+        raw = f.read()
+    expected = os.environ.get("PLAN_DIGEST")
+    if expected and hashlib.sha256(raw).hexdigest() != expected:
+        raise TamperedPlan(f"{path} is not the plan the plan job wrote")
+    return Plan.model_validate_json(raw)
 
 
 class Attempt(Model):

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import glob
-import hashlib
 import json
 import os
 
@@ -9,25 +8,12 @@ from pydantic import ValidationError
 
 from . import notify, render, verdict
 from .data import Store
-from .github import GitHub, GitHubError
-from .models import Plan, Report, Result
+from .github import GitHub, GitHubError, run_url, set_outputs
+from .models import Plan, Report, Result, TamperedPlan, load_plan
 from .plan import Planner, Settings, Trigger, schedule_channel
 
 CHECK = "Catalog Core"
 WORKFLOW = "catalog-test.yml"
-
-
-class TamperedPlan(Exception):
-    pass
-
-
-def load_plan(path: str) -> Plan:
-    with open(path, "rb") as f:
-        raw = f.read()
-    expected = os.environ.get("PLAN_DIGEST")
-    if expected and hashlib.sha256(raw).hexdigest() != expected:
-        raise TamperedPlan(f"{path} is not the plan the plan job wrote")
-    return Plan.model_validate_json(raw)
 
 
 def load_results(directory: str) -> list[Result]:
@@ -39,10 +25,6 @@ def load_results(directory: str) -> list[Result]:
         except (OSError, ValidationError) as e:
             print(f"::warning::ignoring {path}: {str(e)[:300]}")
     return results
-
-
-def run_url() -> str:
-    return f"https://github.com/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
 
 
 def write_summary(text: str) -> None:
@@ -90,10 +72,8 @@ def cmd_start(args) -> int:
         if not plan.trusted:
             title = "Waiting for a maintainer to approve the run"
         check_id = post_check(plan, "in_progress", title, render.check(plan, running=True))
-    output_path = os.environ.get("GITHUB_OUTPUT")
-    if check_id and output_path:
-        with open(output_path, "a") as f:
-            f.write(f"check_id={check_id}\n")
+    if check_id:
+        set_outputs({"check_id": str(check_id)})
     return 0
 
 
@@ -145,13 +125,11 @@ def cmd_fan_out(args) -> int:
     return 0
 
 
-def declined(plan: Plan) -> dict | None:
-    repo = os.environ.get("GITHUB_REPOSITORY")
-    run_id = os.environ.get("GITHUB_RUN_ID")
+def declined(plan: Plan, gh: GitHub, repo: str, run_id: str) -> dict | None:
     if plan.trusted or not repo or not run_id:
         return None
     try:
-        approvals = GitHub(os.environ.get("CI_DATA_TOKEN")).run_approvals(repo, run_id)
+        approvals = gh.run_approvals(repo, run_id)
     except GitHubError:
         return None
     for approval in approvals:
@@ -160,13 +138,11 @@ def declined(plan: Plan) -> dict | None:
     return None
 
 
-def job_logs() -> dict[tuple[str, str], str]:
-    repo = os.environ.get("GITHUB_REPOSITORY")
-    run_id = os.environ.get("GITHUB_RUN_ID")
+def job_logs(gh: GitHub, repo: str, run_id: str) -> dict[tuple[str, str], str]:
     if not repo or not run_id:
         return {}
     try:
-        jobs = GitHub(os.environ.get("CI_DATA_TOKEN")).run_jobs(repo, run_id)
+        jobs = gh.run_jobs(repo, run_id)
     except GitHubError as e:
         print(f"::warning::no links to the job logs: {e}")
         return {}
@@ -217,9 +193,12 @@ def cmd_finish(args) -> int:
         return 0
 
     results = load_results(args.results)
+    repo = os.environ.get("GITHUB_REPOSITORY", "")
+    run_id = os.environ.get("GITHUB_RUN_ID", "")
+    run_gh = GitHub(os.environ.get("CI_DATA_TOKEN"))
     review = None
     if not results:
-        review = declined(plan)
+        review = declined(plan, run_gh, repo, run_id)
     if review is not None:
         who = (review.get("user") or {}).get("login", "a maintainer")
         banner = "A maintainer declined to run the code of these PRs."
@@ -232,7 +211,7 @@ def cmd_finish(args) -> int:
     verdicts = verdict.judge(plan, results)
     conclusion = verdict.conclusion(plan, verdicts)
     title = render.title(plan, verdicts)
-    text = render.check(plan, verdicts, logs=job_logs())
+    text = render.check(plan, verdicts, logs=job_logs(run_gh, repo, run_id))
     report = Report(plan_hash=plan.plan_hash, conclusion=conclusion, title=title, verdicts=verdicts)
     with open(args.out, "w") as f:
         f.write(report.model_dump_json(indent=2))

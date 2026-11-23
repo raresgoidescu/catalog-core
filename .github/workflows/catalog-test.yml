@@ -148,6 +148,7 @@ jobs:
         env:
           APP: ${{ matrix.app }}
           COMPILER: ${{ matrix.compiler }}
+          PLAN_DIGEST: ${{ needs.plan.outputs.digest }}
         run: $UKCI run --plan plan.json --app "$APP" --compiler "$COMPILER" --out results
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

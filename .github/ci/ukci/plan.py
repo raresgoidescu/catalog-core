@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pydantic import ValidationError
 
 from . import apps, data, git
-from .github import GitHub
+from .github import GitHub, run_url, set_outputs
 from .models import CatalogRef, Cell, LockEntry, Part, Plan, PlannedPR, PullRequest, Reused
 from .resolve import CATALOG, Found, Resolution, resolve
 from .run import COMPILERS
@@ -348,7 +348,7 @@ def finish(p: Plan) -> Plan:
         "catalog_base": p.catalog_base.sha if p.catalog_base else None,
         "cells": [cell.model_dump() for cell in p.cells],
     }
-    p.plan_hash = hashlib.sha256(json.dumps(hashed, sort_keys=True).encode()).hexdigest()
+    p.plan_hash = data.digest(hashed)
     return p
 
 
@@ -398,19 +398,14 @@ def main(args) -> int:
         finish(p)
         status = 1
     p.event = event_name
-    server = os.environ.get("GITHUB_SERVER_URL") or "https://github.com"
-    p.run_url = f"{server}/{repository}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '0')}"
+    p.run_url = run_url()
 
     text = p.model_dump_json(indent=2)
     with open(args.out, "w") as f:
         f.write(text)
-    output_path = os.environ.get("GITHUB_OUTPUT")
-    if output_path:
-        values = outputs(p, repository, sha)
-        values["digest"] = hashlib.sha256(text.encode()).hexdigest()
-        with open(output_path, "a") as f:
-            for key, value in values.items():
-                f.write(f"{key}={value}\n")
+    values = outputs(p, repository, sha)
+    values["digest"] = hashlib.sha256(text.encode()).hexdigest()
+    set_outputs(values)
     for error in p.errors:
         print(f"::error::{error}")
     if p.skip:

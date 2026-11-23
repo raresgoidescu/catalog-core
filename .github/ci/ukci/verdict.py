@@ -4,7 +4,6 @@ from .models import Attempt, Plan, Result, Verdict, VerdictName
 
 BLOCKING: set[VerdictName] = {"REGRESSION", "FAIL", "INFRA"}
 ORDER: list[VerdictName] = ["REGRESSION", "FAIL", "INFRA", "FLAKY", "BROKEN_ON_BASE", "PASS"]
-PHASE_ORDER = {"build": 0, "run": 1}
 
 
 def judge_one(
@@ -38,7 +37,7 @@ def judge_one(
         return "INFRA", f"download failed without the PRs: {base.reason}"
     if base.ok:
         return "REGRESSION", last.reason
-    if PHASE_ORDER[last.phase] < PHASE_ORDER[base.phase]:
+    if last.phase == "build" and base.phase == "run":
         return "REGRESSION", last.reason
     return "BROKEN_ON_BASE", last.reason
 

@@ -71,15 +71,16 @@ def post(webhook: str, text: str, mention: str = "") -> bool:
     return False
 
 
-def message(plan: Plan, title: str, previous: dict | None, verdicts: list[Verdict], error: str) -> str | None:
+def message(
+    plan: Plan, title: str, previous: dict | None, broke: list[str], fixed: list[str], error: str
+) -> str | None:
     head = f"**catalog-core nightly ({plan.channel})**"
     if error:
         if previous and previous.get("error"):
             return None
         return f"{head}: couldn't run: {error}\n{plan.run_url}"
     if previous is None:
-        return f"{head}: first recorded run. {title}\n{plan.run_url}"
-    broke, fixed = changes(previous, verdicts)
+        return f"{head}: {title}\n{plan.run_url}"
     if not broke and not fixed and not previous.get("error"):
         return None
     lines = [f"{head}: {title}"]
@@ -99,7 +100,8 @@ def message(plan: Plan, title: str, previous: dict | None, verdicts: list[Verdic
 
 def nightly(plan: Plan, verdicts: list[Verdict], title: str, store: Store | None, error: str = "") -> None:
     previous = store.nightly(plan.channel) if store else None
-    text = message(plan, title, previous, verdicts, error)
+    broke, fixed = changes(previous, verdicts)
+    text = message(plan, title, previous, broke, fixed, error)
     if store:
         store.set_nightly(plan.channel, next_state(previous, verdicts, error, plan.run_url))
     webhook = os.environ.get("DISCORD_WEBHOOK_URL")
@@ -109,6 +111,6 @@ def nightly(plan: Plan, verdicts: list[Verdict], title: str, store: Store | None
     if not webhook:
         return
     mention = ""
-    if changes(previous, verdicts)[0]:
+    if broke:
         mention = os.environ.get("DISCORD_MENTION", "")
     post(webhook, text, mention)
