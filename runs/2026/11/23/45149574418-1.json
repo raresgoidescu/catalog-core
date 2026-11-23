@@ -1,0 +1,2607 @@
+{
+ "channel": "staging",
+ "conclusion": "success",
+ "event": "workflow_dispatch",
+ "lock": {
+  "apps/elfloader": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/app-elfloader",
+   "sha": "0cd7a2b2c4d5ece85647c0c9903b50426e849420",
+   "source": "staging"
+  },
+  "libs/compiler-rt": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-compiler-rt",
+   "sha": "61baeeb7ec4f88f0dd637bbbc52c9b459caa8d8d",
+   "source": "staging"
+  },
+  "libs/libcxx": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-libcxx",
+   "sha": "980bcedd35d7dac8a12f4c7537bae5689b578739",
+   "source": "staging"
+  },
+  "libs/libcxxabi": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-libcxxabi",
+   "sha": "6105b8a26bb084c4e59068c83fe667e591bd4fe3",
+   "source": "staging"
+  },
+  "libs/libelf": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-libelf",
+   "sha": "c03d4ceb22a2b9e9799238f9c277a14284d313ad",
+   "source": "staging"
+  },
+  "libs/libunwind": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-libunwind",
+   "sha": "c00929901c1b07d3587c50c7a28ae58f9918f68f",
+   "source": "staging"
+  },
+  "libs/lwip": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-lwip",
+   "sha": "ec55ae17618feeb57c8c10109bcf5c42723e8e95",
+   "source": "staging"
+  },
+  "libs/musl": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-musl",
+   "sha": "5fed64ecd7f8abb29df444c73df6d797d4efa18f",
+   "source": "staging"
+  },
+  "libs/nginx": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-nginx",
+   "sha": "ff0898d9b9203aa0e53649cf75107ebff78eaa22",
+   "source": "staging"
+  },
+  "libs/python3": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-python3",
+   "sha": "5f3386725ae5ccec3721d4395d554144633dbf5d",
+   "source": "staging"
+  },
+  "libs/redis": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-redis",
+   "sha": "bcd4e5e11d542b6b23cb03457bfa7532497baf5c",
+   "source": "staging"
+  },
+  "libs/sqlite": {
+   "base_sha": null,
+   "parts": [],
+   "pr": null,
+   "repo": "unikraft/lib-sqlite",
+   "sha": "d4938484857bf136e4e138b7f3377680d107bad0",
+   "source": "staging"
+  },
+  "unikraft": {
+   "base_sha": "f33d077ac3f94629d335d3d7caa8b29bcfaedd36",
+   "parts": [
+    {
+     "label": "raresgoidescu/unikraft#11",
+     "sha": "5287444d3c54c9929cd6e8d1ce3a2e35fcbd9e23"
+    },
+    {
+     "label": "raresgoidescu/unikraft#12",
+     "sha": "311e6f97dd509102d374f3f25830bc9fe025a649"
+    }
+   ],
+   "pr": "raresgoidescu/unikraft#11 + raresgoidescu/unikraft#12",
+   "repo": "raresgoidescu/unikraft",
+   "sha": "fa3fce14cbc75953e85abfcda9da7c2c39b84ba8",
+   "source": "raresgoidescu/unikraft#11 + raresgoidescu/unikraft#12 merged together into staging"
+  }
+ },
+ "plan_hash": "cc0c398b254c866d880fe0bb39d89a1d00a4568976b50ae685faa3252d11e428",
+ "prs": [
+  {
+   "base_ref": "staging",
+   "head_sha": "311e6f97dd509102d374f3f25830bc9fe025a649",
+   "note": "",
+   "ref": "raresgoidescu/unikraft#12",
+   "title": "plat/native: Fix build for arm64 using Clang",
+   "url": "https://github.com/raresgoidescu/unikraft/pull/12",
+   "used": true,
+   "via": "root"
+  },
+  {
+   "base_ref": "staging",
+   "head_sha": "5287444d3c54c9929cd6e8d1ce3a2e35fcbd9e23",
+   "note": "",
+   "ref": "raresgoidescu/unikraft#11",
+   "title": "plat/*/pal: Add extern \"C\" guard to ectx.h for C++ compatibility",
+   "url": "https://github.com/raresgoidescu/unikraft/pull/11",
+   "used": true,
+   "via": "Depends-On in raresgoidescu/unikraft#12 description"
+  }
+ ],
+ "root": "raresgoidescu/unikraft#12",
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45149574418",
+ "time": "2026-11-23T10:09:07+00:00",
+ "timings": [
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 23.8,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.4,
+   "total_s": 24.2,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 12.5,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 12.8,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 18.0,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 18.4,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 12.0,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 12.2,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 16.6,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 17.0,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.1,
+   "total_s": 8.0,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.7,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 8.0,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 8.0,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 8.0,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.3,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 7.3,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 5.2,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 5.2,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 5.2,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 5.2,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 15.1,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 15.5,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 9.1,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.1,
+   "total_s": 9.3,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.6,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 7.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 9.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 9.1,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.6,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 7.6,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 6.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 6.1,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "c-fs",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 6.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 6.1,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 11.1,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 11.4,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 5.8,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.1,
+   "total_s": 5.9,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 5.5,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 5.8,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 5.8,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 5.8,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 4.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 4.9,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 5.5,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 5.5,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.0,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.4,
+   "total_s": 7.5,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.2,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.1,
+   "total_s": 7.4,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 5.9,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 6.2,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 7.2,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 7.2,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 5.5,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 5.5,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "c-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 6.8,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 6.8,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 21.8,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 25.0,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 15.8,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 19.0,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 14.7,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 17.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 14.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 14.9,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 13.8,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 13.8,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 15.1,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 15.1,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 16.0,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.2,
+   "total_s": 19.2,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 9.7,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 12.8,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 8.0,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 11.2,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 9.6,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 9.6,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 8.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 8.1,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "c-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 9.8,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 9.8,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 89.3,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.4,
+   "total_s": 89.7,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 34.2,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 34.4,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 87.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 88.2,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 33.7,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 33.7,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 39.4,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 39.4,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 27.7,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 27.7,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 45.5,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 45.7,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 41.0,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 41.0,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 41.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 41.9,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 23.3,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 23.3,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 98.6,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 99.1,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 38.1,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 38.3,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 101.5,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 101.8,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 39.3,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 39.3,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 36.6,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 36.6,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 31.8,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 31.8,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 44.1,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "total_s": 44.3,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 44.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 44.1,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 34.4,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 34.4,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 28.6,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 28.6,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 95.6,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 98.8,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 27.5,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "total_s": 40.7,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 87.6,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 90.7,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 29.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 29.9,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 24.4,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 24.4,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 11.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 11.9,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 25.0,
+   "compiler": "clang",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "total_s": 38.2,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 23.8,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 23.8,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 38.3,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 38.3,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 42.0,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 42.0,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 100.0,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 103.2,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 30.4,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "total_s": 43.6,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 98.8,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 101.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 38.4,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 38.4,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 35.3,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 35.3,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 24.6,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 24.6,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 36.7,
+   "compiler": "gcc",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "total_s": 49.9,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 34.3,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 34.4,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 29.7,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 29.7,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "cpp-http",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 24.9,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 24.9,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 20.0,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 5.1,
+   "total_s": 25.2,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 11.1,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 5.1,
+   "total_s": 16.3,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 19.6,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 5.2,
+   "total_s": 24.8,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-basic",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 11.7,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 5.1,
+   "total_s": 16.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 25.0,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 28.1,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 14.1,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 17.2,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 22.7,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 25.9,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "elfloader-net",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 14.6,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 17.7,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 71.2,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 74.4,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 61.2,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 64.4,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 59.2,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 62.3,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 58.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 58.9,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 48.8,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 48.8,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 18.2,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 18.2,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 14.1,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 14.1,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 74.9,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.2,
+   "total_s": 78.1,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 77.7,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 80.8,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 59.7,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 62.8,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 67.7,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 67.7,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 82.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 82.1,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 14.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 14.1,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "nginx",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 13.6,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 13.6,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 112.2,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 30.1,
+   "total_s": 142.4,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 117.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 30.1,
+   "total_s": 148.1,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 122.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 1.8,
+   "total_s": 124.8,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 114.8,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 114.8,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 125.0,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 125.0,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 20.1,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 20.1,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 38.2,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 38.2,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 122.5,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 30.1,
+   "total_s": 152.7,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 154.4,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 30.1,
+   "total_s": 184.5,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 134.6,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 2.0,
+   "total_s": 136.6,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 162.3,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 162.3,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 128.2,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 128.2,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 19.8,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 19.8,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "python3-hello",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 18.6,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 18.6,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 112.2,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.2,
+   "total_s": 115.5,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 92.2,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 95.4,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 88.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 92.1,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 93.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 93.9,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 90.8,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 90.8,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 40.4,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 40.4,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 35.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 35.9,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 73.1,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 76.3,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 81.2,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 84.4,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 74.1,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 3.1,
+   "total_s": 77.3,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 88.2,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 88.2,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 87.7,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 87.7,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "redis",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 21.1,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 21.1,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "redis",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 19.0,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 19.0,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 63.6,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 64.0,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 66.0,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 66.3,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 65.9,
+   "compiler": "clang",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 66.2,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 65.9,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 65.9,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 73.3,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 73.3,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 28.7,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 28.7,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 23.6,
+   "compiler": "clang",
+   "run": null,
+   "run_s": null,
+   "total_s": 23.6,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 120.0,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.4,
+   "total_s": 120.5,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 129.8,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.2,
+   "total_s": 130.1,
+   "variant": "qemu.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 121.9,
+   "compiler": "gcc",
+   "run": "PASS",
+   "run_s": 0.3,
+   "total_s": 122.3,
+   "variant": "fc.x86_64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 139.0,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 139.0,
+   "variant": "fc.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 124.9,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 124.9,
+   "variant": "xen.x86_64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 20.5,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 20.5,
+   "variant": "xen.arm64"
+  },
+  {
+   "app": "sqlite",
+   "attempt": "base",
+   "build": "FAIL",
+   "build_s": 17.0,
+   "compiler": "gcc",
+   "run": null,
+   "run_s": null,
+   "total_s": 17.0,
+   "variant": "xen.arm64"
+  }
+ ],
+ "title": "26 already broken, 94 of 120 passed",
+ "tools": {
+  "aarch64-gcc": "aarch64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "clang": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+  "firecracker": "Firecracker v1.7.0",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "image": "ubuntu24 20261116.133.1",
+  "kernel": "7.0.0-1014-aws",
+  "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+  "qemu-aarch64": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+ },
+ "verdicts": [
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "bincompat-c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "gcc",
+   "reason": "unikraft/plat/xen/include/uk/plat/xen/tlb.h:25:50: error: expected \u2018;\u2019, \u2018,\u2019 or \u2018)\u2019 before \u2018__unused\u2019",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-fs",
+   "compiler": "clang",
+   "reason": "unikraft/plat/xen/include/uk/plat/xen/tlb.h:25:50: error: expected ')'",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "c-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:44:62: error: invalid conversion from \u2018int\u2019 to \u2018uk_plat_native_arm64_except_id\u2019 [-fpermissive]",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:44:62: error: invalid conversion from \u2018int\u2019 to \u2018uk_plat_native_arm64_except_id\u2019 [-fpermissive]",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "reason": "unikraft/plat/xen/pal/include/uk/plat/pal/except.h:10:10: fatal error: uk/plat/xen/except.h: No such file or directory",
+   "variant": "xen.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "gcc",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'cpp-hello/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "reason": "unikraft/plat/xen/pal/include/uk/plat/pal/except.h:10:10: fatal error: 'uk/plat/xen/except.h' file not found",
+   "variant": "xen.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-hello",
+   "compiler": "clang",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'cpp-hello/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:44:62: error: invalid conversion from \u2018int\u2019 to \u2018uk_plat_native_arm64_except_id\u2019 [-fpermissive]",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:44:62: error: invalid conversion from \u2018int\u2019 to \u2018uk_plat_native_arm64_except_id\u2019 [-fpermissive]",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "reason": "unikraft/plat/xen/pal/include/uk/plat/pal/except.h:10:10: fatal error: uk/plat/xen/except.h: No such file or directory",
+   "variant": "xen.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "gcc",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'cpp-http/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "qemu.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "variant": "fc.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "reason": "unikraft/plat/xen/pal/include/uk/plat/pal/except.h:10:10: fatal error: 'uk/plat/xen/except.h' file not found",
+   "variant": "xen.x86_64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "cpp-http",
+   "compiler": "clang",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'cpp-http/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-basic",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "elfloader-net",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "gcc",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'nginx/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "nginx",
+   "compiler": "clang",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'nginx/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "gcc",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'python3-hello/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "python3-hello",
+   "compiler": "clang",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'python3-hello/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "gcc",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'redis/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "redis",
+   "compiler": "clang",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'redis/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "gcc",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'sqlite/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "qemu.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "fc.arm64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "reason": "",
+   "variant": "xen.x86_64",
+   "verdict": "PASS"
+  },
+  {
+   "app": "sqlite",
+   "compiler": "clang",
+   "reason": "make[2]: *** No rule to make target 'repos/unikraft/plat/common/arm/fp_arm64.c', needed by 'sqlite/workdir/build/libxenplat/fp_arm64.o'.  Stop.",
+   "variant": "xen.arm64",
+   "verdict": "BROKEN_ON_BASE"
+  }
+ ]
+}
