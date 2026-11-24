@@ -1,0 +1,83 @@
+{
+ "attempts": [
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 57.4,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 0.3,
+   "source": "",
+   "total_s": 57.7,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 14.9,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": "BLOCKED",
+   "run_s": 0.1,
+   "source": "",
+   "total_s": 15.0,
+   "variant": "qemu.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 44.7,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 0.2,
+   "source": "",
+   "total_s": 44.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 15.0,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 15.0,
+   "variant": "fc.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 46.1,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 46.1,
+   "variant": "xen.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 15.4,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/xen/arch/arm64/include/uk/plat/xen/arch/except.h:56:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 15.4,
+   "variant": "xen.arm64"
+  }
+ ],
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45377088594"
+}
