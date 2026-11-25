@@ -1,0 +1,83 @@
+{
+ "attempts": [
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 100.7,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 3.1,
+   "source": "",
+   "total_s": 103.9,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 53.9,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "source": "",
+   "total_s": 67.1,
+   "variant": "qemu.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 101.8,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 3.1,
+   "source": "",
+   "total_s": 105.0,
+   "variant": "fc.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 37.8,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 37.8,
+   "variant": "fc.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 93.9,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 93.9,
+   "variant": "xen.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 42.3,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/xen/arch/arm64/include/uk/plat/xen/arch/except.h:56:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 42.3,
+   "variant": "xen.arm64"
+  }
+ ],
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45586785531"
+}

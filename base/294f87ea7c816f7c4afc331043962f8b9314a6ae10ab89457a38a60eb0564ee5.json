@@ -3,66 +3,66 @@
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 16.5,
+   "build_s": 10.8,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 0.4,
    "source": "",
-   "total_s": 17.0,
+   "total_s": 11.3,
    "variant": "qemu.x86_64"
   },
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 9.7,
+   "build_s": 9.8,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 0.2,
    "source": "",
-   "total_s": 9.9,
+   "total_s": 10.1,
    "variant": "qemu.arm64"
   },
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 9.0,
+   "build_s": 9.2,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 0.2,
    "source": "",
-   "total_s": 9.3,
+   "total_s": 9.5,
    "variant": "fc.x86_64"
   },
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 9.4,
+   "build_s": 9.6,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": null,
    "run_s": null,
    "source": "",
-   "total_s": 9.4,
+   "total_s": 9.6,
    "variant": "fc.arm64"
   },
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 7.8,
+   "build_s": 8.0,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": null,
    "run_s": null,
    "source": "",
-   "total_s": 7.8,
+   "total_s": 8.0,
    "variant": "xen.x86_64"
   },
   {
@@ -79,5 +79,5 @@
    "variant": "xen.arm64"
   }
  ],
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45377088594"
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45586785531"
 }
