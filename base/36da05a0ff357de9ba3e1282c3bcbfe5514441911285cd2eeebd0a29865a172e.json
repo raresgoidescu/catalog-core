@@ -1,0 +1,83 @@
+{
+ "attempts": [
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 62.3,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 3.2,
+   "source": "",
+   "total_s": 65.6,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 62.0,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c:36:3: error: expected readable system register",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "source": "",
+   "total_s": 75.1,
+   "variant": "qemu.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 61.7,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 3.1,
+   "source": "",
+   "total_s": 64.9,
+   "variant": "fc.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 60.6,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c:36:3: error: expected readable system register",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 60.6,
+   "variant": "fc.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 71.6,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 71.6,
+   "variant": "xen.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 72.8,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/arch/arm64/ectx.c:36:3: error: expected readable system register",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 72.8,
+   "variant": "xen.arm64"
+  }
+ ],
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45973876368"
+}

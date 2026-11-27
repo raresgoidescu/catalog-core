@@ -1,0 +1,83 @@
+{
+ "attempts": [
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 53.2,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 3.2,
+   "source": "",
+   "total_s": 56.4,
+   "variant": "qemu.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 12.4,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": "BLOCKED",
+   "run_s": 13.1,
+   "source": "",
+   "total_s": 25.5,
+   "variant": "qemu.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 43.9,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 3.1,
+   "source": "",
+   "total_s": 47.0,
+   "variant": "fc.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 12.4,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/native/pal/arch/arm64/include/uk/plat/pal/arch/except.h:43:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 12.4,
+   "variant": "fc.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 45.8,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 45.8,
+   "variant": "xen.x86_64"
+  },
+  {
+   "attempt": "first",
+   "build": "FAIL",
+   "build_s": 12.8,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "unikraft/plat/xen/arch/arm64/include/uk/plat/xen/arch/except.h:56:2: error: no matching function for call to 'uk_plat_native_arm64_except_err_ctx_set_eid'",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 12.8,
+   "variant": "xen.arm64"
+  }
+ ],
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45973876368"
+}
