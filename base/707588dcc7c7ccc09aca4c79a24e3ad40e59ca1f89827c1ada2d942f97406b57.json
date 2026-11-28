@@ -3,28 +3,41 @@
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 22.6,
+   "build_s": 13.4,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 3.1,
    "source": "",
-   "total_s": 25.8,
+   "total_s": 16.6,
    "variant": "qemu.x86_64"
   },
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 9.6,
+   "build_s": 9.3,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 3.1,
    "source": "",
-   "total_s": 12.7,
+   "total_s": 12.5,
    "variant": "qemu.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 8.9,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": "PASS",
+   "run_s": 3.1,
+   "source": "",
+   "total_s": 12.1,
+   "variant": "fc.x86_64"
   },
   {
    "attempt": "first",
@@ -33,11 +46,24 @@
    "env_error": false,
    "fetch_error": false,
    "reason": "",
-   "run": "PASS",
-   "run_s": 3.1,
+   "run": null,
+   "run_s": null,
    "source": "",
-   "total_s": 12.2,
-   "variant": "fc.x86_64"
+   "total_s": 9.1,
+   "variant": "fc.arm64"
+  },
+  {
+   "attempt": "first",
+   "build": "PASS",
+   "build_s": 8.5,
+   "env_error": false,
+   "fetch_error": false,
+   "reason": "",
+   "run": null,
+   "run_s": null,
+   "source": "",
+   "total_s": 8.5,
+   "variant": "xen.x86_64"
   },
   {
    "attempt": "first",
@@ -50,34 +76,8 @@
    "run_s": null,
    "source": "",
    "total_s": 9.3,
-   "variant": "fc.arm64"
-  },
-  {
-   "attempt": "first",
-   "build": "PASS",
-   "build_s": 8.6,
-   "env_error": false,
-   "fetch_error": false,
-   "reason": "",
-   "run": null,
-   "run_s": null,
-   "source": "",
-   "total_s": 8.6,
-   "variant": "xen.x86_64"
-  },
-  {
-   "attempt": "first",
-   "build": "PASS",
-   "build_s": 9.6,
-   "env_error": false,
-   "fetch_error": false,
-   "reason": "",
-   "run": null,
-   "run_s": null,
-   "source": "",
-   "total_s": 9.6,
    "variant": "xen.arm64"
   }
  ],
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45973876368"
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/46126954503"
 }

@@ -3,29 +3,29 @@
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 16.2,
+   "build_s": 28.2,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 3.1,
    "source": "",
-   "total_s": 19.3,
+   "total_s": 31.4,
    "variant": "qemu.x86_64"
   },
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 15.2,
+   "build_s": 23.1,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 3.1,
    "source": "",
-   "total_s": 18.4,
+   "total_s": 26.3,
    "variant": "fc.x86_64"
   }
  ],
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45973876368"
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/46126954503"
 }

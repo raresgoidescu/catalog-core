@@ -3,7 +3,7 @@
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 22.8,
+   "build_s": 22.9,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
@@ -16,16 +16,16 @@
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 12.4,
+   "build_s": 12.5,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
    "run_s": 0.2,
    "source": "",
-   "total_s": 12.7,
+   "total_s": 12.8,
    "variant": "fc.x86_64"
   }
  ],
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45973876368"
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/46126954503"
 }

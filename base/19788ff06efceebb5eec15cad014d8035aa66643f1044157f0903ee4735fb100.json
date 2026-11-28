@@ -3,14 +3,14 @@
   {
    "attempt": "first",
    "build": "PASS",
-   "build_s": 27.0,
+   "build_s": 22.3,
    "env_error": false,
    "fetch_error": false,
    "reason": "",
    "run": "PASS",
-   "run_s": 3.3,
+   "run_s": 3.2,
    "source": "",
-   "total_s": 30.4,
+   "total_s": 25.6,
    "variant": "qemu.x86_64"
   },
   {
@@ -27,5 +27,5 @@
    "variant": "fc.x86_64"
   }
  ],
- "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/45973876368"
+ "run_url": "https://github.com/raresgoidescu/catalog-core/actions/runs/46126954503"
 }
